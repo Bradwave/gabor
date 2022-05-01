@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=1">
+
+    <meta name="description" content="A Gabor Transform implementation">
+    <meta name="keywords" content="maths, analysis, fourier, gabor">
+
+    <title>Gabor Transform</title>
+
+    <link rel="stylesheet" href="css/crimson-days.css">
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- SPINNING LOADER -->
+
+    <div id="loading-container" class="loading-container">
+        <div class="general loader"></div>
+    </div>
+
+    <!-- PAGE CONTENT -->
+
+    <div class="page-container" id="page-container" style="visibility: hidden; opacity: 0;">
+        <nav class="page-sidebar">
+
+        </nav>
+        <main class="page-content" id="page-content">
+
+            <div style="height: 20pt;"></div>
+
+            <div class="plot-container" id="plot-1" style="margin-top: 20px;">
+                <canvas class="plot" id="canvas-1" tabindex="1" style="height: 75px;"></canvas>
+                <div id="loader-1" class="plot loader"></div>
+            </div>
+            <div class="plot-container" id="plot-2">
+                <canvas class="plot window-plot" id="canvas-2" tabindex="3" style="height: 75px;"></canvas>
+                <div id="loader-2" class="plot loader"></div>
+            </div>
+
+            <div class="plot-container" id="plot-3" style="margin-top: 30px;">
+                <canvas class="plot" id="canvas-3" tabindex="4" style="height: 300px;"></canvas>
+                <div id="loader-3" class="plot loader"></div>
+            </div>
+
+        </main>
+
+        <script src="js/src/page-controller.js"></script>
+        <script src="js/src/utils/utils.js"></script>
+        <script src="js/src/utils/music-utils.js"></script>
+        <script src="js/src/utils/math-utils.js"></script>
+        <script src="js/src/plots/plot-structure.js"></script>
+        <script src="js/src/plots/signal-plot.js"></script>
+        <script src="js/src/plots/window-plot.js"></script>
+        <script src="js/src/plots/gabor-plot.js"></script>
+        <script src="js/src/plots/plots-manager.js"></script>
+</body>
+
+</html>
