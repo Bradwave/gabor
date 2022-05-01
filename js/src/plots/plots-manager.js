@@ -70,7 +70,9 @@ let plotsManager = new function () {
 
         let testSignal1 = new musicSignal(test1, { timeScale: 20 });
 
-        let testMusicString = "[a#0/1:1 a1/2:1 a2/1.5:0.5]";
+        let testMusicString = "[a#/1:1 a1/2:1 a2/1.5:0.5]; [g&1/2:1.5]";
+
+        let odeToJoySheet2 = "[e/1:1]"
         let testSignal2 = new musicSignal(fromStringToMusic(testMusicString), {timeScale: 20});
 
         /**
@@ -79,7 +81,7 @@ let plotsManager = new function () {
         plots = [
             new signalPlot(1, testSignal2, { numPoints: 1000 }),
             new windowPlot(2, g1, { signal: testSignal2, numPoints: 1000 }),
-            new gaborPlot(3, testSignal2, g1, { transformOptions: { N: 2000, padding: .2 } }),
+            new gaborPlot(3, testSignal2, g1, { transformOptions: { N: 1500, padding: .2 } }),
         ];
     }
 

@@ -36,7 +36,7 @@ const fromStringToMusic = (musicString) => {
 
             // Divides the note name from the octave
             let noteValue = noteStructure[0];
-            let noteOctave = toDefaultIfUndefined(parseInt(noteValue.slice(-1)), 0);
+            let noteOctave = isNaN(noteValue.slice(-1)) ? 0 : parseInt(noteValue.slice(-1));
             let noteName = noteValue.slice(0, -1);
 
             // Divides the note duration from the volume

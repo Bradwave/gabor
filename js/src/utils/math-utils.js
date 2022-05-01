@@ -56,7 +56,7 @@ class ComplexNumber {
      * Get the absolute value, that is A in A*e^(i*phi)
      * @returns The absolute value.
      */
-    amp() {
+    abs() {
         return Math.sqrt(this.re * this.re + this.im * this.im);;
     }
 
@@ -257,9 +257,24 @@ let gaborTransformStructure = function (inputSignal, inputWindowFunction, option
     let signal;
 
     /**
+     * Sampled points of the signal.
+     */
+    let sampledSignal = [];
+
+    /**
      * Window function g(x).
      */
     let windowFunction;
+
+    /**
+     * Sampled points of the window.
+     */
+    let sampledWindow = [];
+
+    /**
+     * Sampled coefficient of the Gabor transform.
+     */
+    let sampledCoefficient = []
 
     /**
      * Duration of the signal.
@@ -282,14 +297,32 @@ let gaborTransformStructure = function (inputSignal, inputWindowFunction, option
     let rangeDiff;
 
     /**
-     * Number of sample points.
+     * Number of sampled points.
      */
     let numPoints;
+
+    /**
+     * Rate of sampled frequency points.
+     */
+    let freqRate;
+
+    /**
+     * Rate of sampled time points.
+     */
+    let timeRate;
 
     /**
      * dt increment for numerical integration.
      */
     let dt;
+
+    /**
+     * Get the number of sampled points of the signal and window.
+     * @returns Number of sampled points.
+     */
+    publicAPIs.getNumPoints = function () {
+        return numPoints;
+    }
 
     /**
      * Updates the Gabor transform structure.
@@ -300,7 +333,7 @@ let gaborTransformStructure = function (inputSignal, inputWindowFunction, option
     publicAPIs.update = function (inputSignal, inputWindowFunction, options) {
         signal = inputSignal;
         windowFunction = inputWindowFunction;
-        
+
         signalDuration = signal.getDuration();
         range = signal.getRange();
         // rangeDiff = 2 * range.max * (1 + padding);
@@ -308,7 +341,28 @@ let gaborTransformStructure = function (inputSignal, inputWindowFunction, option
         padding = toDefaultIfUndefined(options.padding, .1) * rangeDiff;
 
         numPoints = toDefaultIfUndefined(options.N, 400);
+        freqRate = options.freqRate;
+        timeRate = options.timeRate;
         dt = signalDuration / numPoints;
+
+        for (let i = 0; i < 2 * numPoints; i++) {
+            sampledCoefficient[i] = [];
+
+            sampledWindow.push(
+                windowFunction.valueAt(- 2 + 2 * i / (numPoints), signal.getTimeScale())
+            );
+
+            if (i < numPoints) {
+                sampledSignal.push(signal.valueAt(i / numPoints));
+
+                for (let j = 0; j < numPoints; j += freqRate) {
+                    const phi = - 2 * Math.PI * (i / numPoints * signalDuration)
+                        // * (- range.max * (1 + padding) + omega * rangeDiff));
+                        * (range.min - padding + (j / numPoints) * (rangeDiff + padding * 2));
+                    sampledCoefficient[i][j / freqRate] = new ComplexNumber(Math.cos(phi), Math.sin(phi));
+                }
+            }
+        }
     }
 
     publicAPIs.update(inputSignal, inputWindowFunction, options);
@@ -322,17 +376,13 @@ let gaborTransformStructure = function (inputSignal, inputWindowFunction, option
     publicAPIs.valueAt = (x, omega) => {
         let vgf = new ComplexNumber(0, 0);
 
-        for (t = 0; t < signalDuration; t += dt) {
+        for (let t = 0; t < numPoints; t++) {
             // Coefficient e^(-2 * PI * t * omega)
-            const phi = (- 2 * Math.PI * t
-                // * (- range.max * (1 + padding) + omega * rangeDiff));
-                * (range.min - padding + omega * (rangeDiff + padding * 2)));
-            const c = new ComplexNumber(Math.cos(phi), Math.sin(phi));
-
+            const c = sampledCoefficient[t][omega];
             // f(t)
-            let f = signal.valueAt(t / signalDuration);
+            const f = sampledSignal[t];
             // g(t - x)
-            let g = windowFunction.valueAt(t / signalDuration - x, signal.getTimeScale());
+            const g = sampledWindow[numPoints + t - x];
 
             // Integral of coefficient * f * g * dt
             vgf.add(c.scale(f * g * dt));

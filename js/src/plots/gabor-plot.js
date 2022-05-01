@@ -32,14 +32,19 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
     */
 
     /**
-     * Number of time points.
+     * Number of sampled points in the Gabor transform.
      */
-    let numTimePoints;
+    let numPoints;
 
     /**
-     * Number of frequency points.
+     * Number of sampled time points.
      */
-    let numFreqPoints;
+    let timeNumPoints;
+
+    /**
+     * Number of sampled frequency points.
+     */
+    let freqNumPoints;
 
     /**
      * Width of a plot cell.
@@ -57,27 +62,41 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
     let gaborTransform;
 
     /**
+     * Rate of sampled time points.
+     */
+    let timeRate
+
+    /**
+     * Rate of sampled frequency points.
+     */
+    let freqRate;
+
+    /**
      * Updates the plot.
      * @param {*} inputSignal Signal function f(x).
      * @param {*} inputWindowFunction Window function g(x).
      * @param {*} options 
      */
     publicAPIs.updatePlot = (inputSignal, inputWindowFunction, options) => {
+        timeRate = toDefaultIfUndefined(options.timeRate, 8);
+        freqRate = toDefaultIfUndefined(options.freqRate, 12);
+
+        options.transformOptions["timeRate"] = timeRate;
+        options.transformOptions["freqRate"] = freqRate;
+
         gaborTransform = new gaborTransformStructure(
             inputSignal, inputWindowFunction,
             options.transformOptions
         );
 
-        numTimePoints = toDefaultIfUndefined(options.numTimePoints, 200);
-        numFreqPoints = toDefaultIfUndefined(options.numFreqPoints, 100);
+        numPoints = gaborTransform.getNumPoints();
+
+        timeNumPoints = Math.round(numPoints / timeRate);
+        freqNumPoints = Math.round(numPoints / freqRate);
     }
 
     // Creates the plot
     publicAPIs.updatePlot(inputSignal, inputWindowFunction, options);
-
-    /*_______________________________________
-    |   HTML elements
-    */
 
     /*_______________________________________
     |   Canvas
@@ -95,8 +114,8 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
         width = plot.getWidth();
         height = plot.getHeight();
 
-        cellWidth = width / numTimePoints;
-        cellHeight = height / numFreqPoints;
+        cellWidth = width / numPoints;
+        cellHeight = height / numPoints;
     }
 
     /**
@@ -106,30 +125,31 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
         // Clears the canvas
         ctx.clearRect(0, 0, width, height);
 
-        for (let i = 0; i < numTimePoints; i++) {
-            for (let j = 0; j < numFreqPoints; j++) {
-
+        for (let i = 0; i < numPoints; i += timeRate) {
+            for (let j = 0; j < numPoints; j += freqRate) {
                 // Gabor transform
-                const vgf = gaborTransform.valueAt(
-                    i / numTimePoints,
-                    j / numFreqPoints
-                );
-
+                const vgf = gaborTransform.valueAt(i, j / freqRate);
                 // Spectrogram
-                const spectrogram = Math.sqrt(vgf.amp());
-                // console.log(vgf)
+                const spectrogram = vgf.abs(); // Math.sqrt(vgf.amp());
 
-                const xPos = Math.round(i * cellWidth);
-                const yPos = height - Math.round(j * cellHeight)
+                // Position of the cell
+                const xPos = Math.round(i / numPoints * width);
+                const yPos = height - Math.round(j / numPoints * height)
+                // Grey value of the cell
+                const alpha = - Math.exp(- spectrogram) + 1;
 
-                const alpha = (- Math.exp(- spectrogram) + 1) ** 2;
-
-                ctx.fillStyle = "rgba(0, 0, 0, " + alpha + ")";
-                ctx.fillRect(
+                // Draws the cell
+                ctx.beginPath();
+                ctx.fillStyle = "rgb("
+                    + (255 - alpha * 255) + ", "
+                    + (255 - alpha * 255) + ", "
+                    + (255 - alpha * 255) + ")";
+                ctx.rect(
                     xPos, yPos,
-                    Math.round((i + 1) * cellWidth) - xPos,
-                    height - Math.round((j + 1) * cellHeight) - yPos
+                    Math.round((i + timeRate) / numPoints * width) - xPos,
+                    height - Math.round((j + freqRate) / numPoints * height) - yPos
                 );
+                ctx.fill();
             }
         }
     }
