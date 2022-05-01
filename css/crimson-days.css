@@ -25,7 +25,7 @@
 
 /* Robot Mono and STIX Two Text from Google Font */
 
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
 /**/
 
 /* -- Variables -- */
@@ -116,6 +116,7 @@
     .page-container {
         grid-template-columns: none;
     }
+
     .page-content {
         padding: 40px;
     }
@@ -135,72 +136,6 @@ body {
     scroll-behavior: smooth;
     scrollbar-width: thin;
     transition: all .3s ease-in-out;
-}
-
-/* -- 2.1.1 Text -- */
-
-/* -- Headers -- */
-
-/* Title */
-
-h1 {
-    margin-top: 80px;
-    font-size: 40px;
-    font-weight: 700;
-    counter-reset: part;
-    counter-reset: section;
-}
-
-/* Part */
-
-h2 {
-    margin-top: 60px;
-    font-size: 32px;
-    font-weight: 700;
-    font-variant: small-caps;
-    counter-increment: part;
-    counter-reset: section;
-}
-
-h2::before {
-    content: counter(part, upper-roman);
-    margin-right: 20px;
-}
-
-/* Section */
-
-h3 {
-    font-size: 28px;
-    counter-increment: section;
-    counter-reset: subsection;
-}
-
-h3::before {
-    content: counter(section);
-    margin-right: 20px;
-}
-
-/* Subsection */
-
-h4 {
-    font-size: 22px;
-    counter-increment: subsection;
-    counter-reset: case;
-}
-
-h4::before {
-    content: counter(section) "." counter(subsection);
-    margin-right: 20px;
-}
-
-h5 {
-    font-size: 20px;
-    counter-increment: case;
-}
-
-h5::before {
-    content: counter(case, upper-alpha);
-    margin-right: 20px;
 }
 
 /* -- Paragraphs -- */
@@ -230,6 +165,8 @@ a {
 
 div.plot-container {
     position: relative;
+    display: grid;
+    place-items: center;
 }
 
 canvas {
@@ -243,13 +180,9 @@ canvas {
 canvas.plot {
     width: 100%;
     height: 50%;
+    z-index: 9;
     border-radius: 10px;
     cursor: crosshair;
-}
-
-div.canvas-container {
-    display: grid;
-    place-items: center;
 }
 
 /* Activate for focus outline */
@@ -297,6 +230,7 @@ div.play-pause-plot {
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }
@@ -306,10 +240,10 @@ div.play-pause-plot {
 
 .loader.plot {
     position: absolute;
-    top: 4px;
-    left: 4px;
+    z-index: 8;
     font-size: 2px;
     border-left: 1.75em solid #00000090;
+    opacity: 0;
 }
 
 /* General loader */
@@ -319,6 +253,7 @@ div.play-pause-plot {
     left: 2pt;
     font-size: 3px;
     border-left: 1.75em solid #00000090;
+    opacity: 1;
     visibility: visible;
     animation-play-state: running;
 }

@@ -46,15 +46,30 @@ let signalPlot = function (idNumber, inputSignal, options = []) {
     let signal;
 
     /**
+     * Sampled signal.
+     */
+    let sampledSignal;
+
+    /**
      * Updates the plot.
      * @param {*} inputSignal Signal function f(x), 
      * @param {*} options 
      */
-    publicAPIs.updatePlot = function(inputSignal, options) {
+    publicAPIs.updatePlot = function (inputSignal, options) {
+        // Updates the signal function
         signal = inputSignal;
 
-        numPoints = toDefaultIfUndefined(options.numPoints, 100);
-        yScale = toDefaultIfUndefined(options.yScale, 0.2);
+        // Updates sampled window and signal
+        if (typeof options.N === 'undefined') {
+            numPoints = signal.getNumPoints();
+            sampledSignal = signal.getSampled();
+        } else {
+            numPoints = options.N;
+            sampledSignal = signal.getSampled(numPoints);
+        }
+
+        // Sets the scale according to the amplitude
+        yScale = toDefaultIfUndefined(options.yScale, 0.4 / signal.getAmp());
     }
 
     // Creates the plot
@@ -96,7 +111,7 @@ let signalPlot = function (idNumber, inputSignal, options = []) {
         for (let i = 1; i < numPoints; i++) {
             ctx.lineTo(
                 i / numPoints * width,
-                height - height * (0.5 + yScale * signal.valueAt(i / numPoints)));
+                height - height * (0.5 + yScale * sampledSignal[i]));
         }
         ctx.stroke();
     }

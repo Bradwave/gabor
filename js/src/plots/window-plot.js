@@ -46,9 +46,19 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
     let windowFunction;
 
     /**
+     * Sampled window function.
+     */
+    let sampledWindow;
+
+    /**
      * Signal function.
      */
     let signal;
+
+    /**
+     * Sampled signal function.
+     */
+    let sampledSignal;
 
     /**
      * Window function position on the time axis.
@@ -61,15 +71,33 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
      * @param {*} options 
      */
     publicAPIs.updatePlot = function (inputWindowFunction, options) {
+        // Updates window function
         windowFunction = inputWindowFunction;
 
-        numPoints = toDefaultIfUndefined(options.numPoints, 100);
-        yScale = toDefaultIfUndefined(options.yScale, 0.2);
+        // Updates signal if present
         showSignal = typeof options.signal === 'undefined' ? false : true;
+        if (showSignal) signal = options.signal;
 
-        if (showSignal) {
-            signal = options.signal;
+
+        // Updates sampled window and signal
+        if (typeof options.N === 'undefined') {
+            numPoints = windowFunction.getNumPoints();
+            sampledWindow = windowFunction.getSampled();
+            if (showSignal) {
+                if (signal.getNumPoints() !== numPoints) {
+                    sampledSignal = signal.getSampled(numPoints)
+                } else {
+                    sampledSignal = signal.getSampled();
+                }
+            }
+        } else {
+            numPoints = options.N;
+            sampledWindow = windowFunction.getSampled(numPoints);
+            if (showSignal) sampledSignal = signal.getSampled(numPoints);
         }
+
+        // Sets the scale according to the amplitude
+        yScale = showSignal ? toDefaultIfUndefined(options.yScale, 0.4 / signal.getAmp()) : 0.8;
     }
 
     // Creates the plot
@@ -124,7 +152,7 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
             for (let i = 1; i < numPoints; i++) {
                 ctx.lineTo(
                     i / numPoints * width,
-                    height * (0.5 + yScale * signal.valueAt(i / numPoints)));
+                    height - height * (0.5 + yScale * sampledSignal[i]));
             }
             ctx.stroke();
 
@@ -134,13 +162,10 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
             ctx.beginPath();
             ctx.moveTo(0, height * 0.5);
             for (let i = 1; i < numPoints; i++) {
+                const w = sampledWindow[numPoints + i - Math.round(windowPosition * numPoints)];
                 ctx.lineTo(
                     i / numPoints * width,
-                    height * (0.5 - yScale * windowFunction.valueAt(
-                        i / numPoints - windowPosition,
-                        signal.getTimeScale()
-                    )
-                        * signal.valueAt(i / numPoints))
+                    height * (0.5 - yScale * w * sampledSignal[i])
                 );
             }
             ctx.stroke();
@@ -161,12 +186,10 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
         ctx.setLineDash([]);
         ctx.moveTo(0, height * 0.5);
         for (let i = 1; i < numPoints; i++) {
+            const w = sampledWindow[numPoints + i - Math.round(windowPosition * numPoints)];
             ctx.lineTo(
                 i / numPoints * width,
-                height * (0.5 - 0.2 * windowFunction.valueAt(
-                    i / numPoints - windowPosition,
-                    signal.getTimeScale())
-                )
+                height * (0.5 - yScale * w)
             );
         }
         ctx.stroke();

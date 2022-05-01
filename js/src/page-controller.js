@@ -5,6 +5,7 @@ let dpi;
 
 window.onload = () => {
     // Removes the spinning loader
+    document.getElementById("loading-container").style.opacity = 0;
     document.getElementById("loading-container").remove();
     // Makes page content visible 
     document.getElementById("page-container").style = "visibility: visible; opacity: 1;";

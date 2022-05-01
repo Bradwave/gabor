@@ -75,13 +75,12 @@ class ComplexNumber {
  * @param {*} sigma Standard deviation.
  * @param {*} mu Expected value.
  */
-let gaussianWindow = function (sigma, mu = 0) {
+let gaussianWindow = function (sigma, options = []) {
 
     /**
      * Public methods.
      */
     let publicAPIs = {};
-
 
     /**
      * Coefficient 1 / (2 * PI * sigma^2).
@@ -91,14 +90,79 @@ let gaussianWindow = function (sigma, mu = 0) {
     /**
      * Coefficient -1 / (2 * PI * sigma^2).
      */
-    let c2 = - 1 / (2 * Math.pow(sigma, 2));
+    let c2;
+
+    /**
+     * Expected value;
+     */
+    let mu;
+
+    /**
+     * Time scaling factor.
+     */
+    let timeScale;
+
+    /**
+     * Sampled window.
+     */
+    let sampledWindow = [];
+
+    /**
+     * Get the number of sampled points.
+     * @returns The number of sampled points.
+     */
+    publicAPIs.getNumPoints = function () {
+        return sampledWindow.length / 2;
+    }
+
+    /**
+     * Get the sampled window.
+     * @param {Number} N Number of points to be sampled.
+     * @returns The sampled window.
+     */
+    publicAPIs.getSampled = (N = undefined) => {
+        if (typeof N === 'undefined') {
+            return sampledWindow;
+        } else {
+            return sample(N);
+        }
+    }
+
+    /**
+     * Samples the window.
+     * @param {Number} N Number of points to be sampled.
+     * @returns The sampled window.
+     */
+    const sample = (N) => {
+        let sampledWindow = [];
+        for (let i = 0; i < 2 * N; i++) {
+            sampledWindow[i] = publicAPIs.valueAt(- 2 + 2 * i / N);
+        }
+        return sampledWindow;
+    }
 
     /**
      * Get value of Gaussian window g(x) for x.
      */
-    publicAPIs.valueAt = (x, timeScale = 1) => {
+    publicAPIs.valueAt = (x) => {
         return Math.exp(c2 * Math.pow(x * timeScale - mu, 2));
     }
+
+    /**
+     * Update the Gaussian window.
+     * @param {Number} sigma Standard deviation.
+     * @param {*} options
+     */
+    publicAPIs.update = (sigma, options) => {
+        c2 = - 1 / (2 * Math.pow(sigma, 2));
+        mu = toDefaultIfUndefined(options.mu, 0);
+
+        timeScale = toDefaultIfUndefined(options.timeScale, 1);
+        sampledWindow = sample(toDefaultIfUndefined(options.N, 1000));
+    }
+
+    // Creates the window.
+    publicAPIs.update(sigma, options);
 
     // Returns public methods
     return publicAPIs;
@@ -127,9 +191,14 @@ let musicSignal = function (tracks, options = []) {
     let duration;
 
     /**
-     * Time scale.
+     * Time scale factor.
      */
     let timeScale;
+
+    /**
+     * Sampled points.
+     */
+    let sampledSignal = [];
 
     /**
      * Returns time duration of the music signal.
@@ -178,19 +247,50 @@ let musicSignal = function (tracks, options = []) {
     }
 
     /**
-     * Updates the signal.
-     * @param {*} options
+     * Get the amplitude of the signal.
+     * @returns Amplitude of the signal.
      */
-    publicAPIs.update = (options = []) => {
-        baseFreq = toDefaultIfUndefined(options.baseFreq, 1);
-        linearSpeed = toDefaultIfUndefined(options.linearSpeed, 1);
-        timeScale = toDefaultIfUndefined(options.timeScale, 1);
-
-        duration = publicAPIs.getDuration();
+    publicAPIs.getAmp = function () {
+        let maxPoint = 0;
+        sampledSignal.forEach(point => {
+            maxPoint = point > maxPoint ? point : maxPoint;
+        })
+        return maxPoint;
     }
 
-    // Creates the signal.
-    publicAPIs.update(options);
+    /**
+     * Get the number of sampled points.
+     * @returns The number of sampled points.
+     */
+    publicAPIs.getNumPoints = function () {
+        return sampledSignal.length;
+    }
+
+    /**
+     * Get the sampled version of the signal.
+     * @param {Number} N Number of points to be sampled.
+     * @returns The sampled signal.
+     */
+    publicAPIs.getSampled = (N = undefined) => {
+        if (typeof N === 'undefined') {
+            return sampledSignal;
+        } else {
+            return sample(N);
+        }
+    }
+
+    /**
+     * Samples the signal.
+     * @param {Number} N Number of points to be sampled.
+     * @returns The sampled signal.
+     */
+    const sample = (N) => {
+        let sampledSignal = [];
+        for (let i = 0; i < N; i++) {
+            sampledSignal[i] = publicAPIs.valueAt(i / N);
+        }
+        return sampledSignal;
+    }
 
     /**
      * Get value of the music signal f(x) for x ∈ [0, 1].
@@ -232,6 +332,22 @@ let musicSignal = function (tracks, options = []) {
         return baseFreq * Math.pow(2, octave + 1 / 12 * notesMap.get(note));
     }
 
+    /**
+     * Updates the signal.
+     * @param {*} options
+     */
+    publicAPIs.update = (options = []) => {
+        baseFreq = toDefaultIfUndefined(options.baseFreq, 1);
+        linearSpeed = toDefaultIfUndefined(options.linearSpeed, 1);
+        timeScale = toDefaultIfUndefined(options.timeScale, 1);
+
+        duration = publicAPIs.getDuration();
+
+        sampledSignal = sample(toDefaultIfUndefined(options.N, 1000));
+    }
+
+    // Creates the signal.
+    publicAPIs.update(options);
 
     // Returns public methods
     return publicAPIs;
@@ -345,22 +461,21 @@ let gaborTransformStructure = function (inputSignal, inputWindowFunction, option
         timeRate = options.timeRate;
         dt = signalDuration / numPoints;
 
-        for (let i = 0; i < 2 * numPoints; i++) {
+        if (typeof options.N === 'undefined') {
+            sampledSignal = signal.getSampled();
+            sampledWindow = windowFunction.getSampled();
+        } else {
+            sampledSignal = signal.getSampled(numPoints);
+            sampledWindow = windowFunction.getSampled(numPoints);
+        }
+
+        for (let i = 0; i < numPoints; i++) {
             sampledCoefficient[i] = [];
-
-            sampledWindow.push(
-                windowFunction.valueAt(- 2 + 2 * i / (numPoints), signal.getTimeScale())
-            );
-
-            if (i < numPoints) {
-                sampledSignal.push(signal.valueAt(i / numPoints));
-
-                for (let j = 0; j < numPoints; j += freqRate) {
-                    const phi = - 2 * Math.PI * (i / numPoints * signalDuration)
-                        // * (- range.max * (1 + padding) + omega * rangeDiff));
-                        * (range.min - padding + (j / numPoints) * (rangeDiff + padding * 2));
-                    sampledCoefficient[i][j / freqRate] = new ComplexNumber(Math.cos(phi), Math.sin(phi));
-                }
+            for (let j = 0; j < numPoints; j += freqRate) {
+                const phi = - 2 * Math.PI * (i / numPoints * signalDuration)
+                    // * (- range.max * (1 + padding) + omega * rangeDiff));
+                    * (range.min - padding + (j / numPoints) * (rangeDiff + padding * 2));
+                sampledCoefficient[i][j / freqRate] = new ComplexNumber(Math.cos(phi), Math.sin(phi));
             }
         }
     }

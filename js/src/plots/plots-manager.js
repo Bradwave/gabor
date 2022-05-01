@@ -17,18 +17,28 @@ let plotsManager = new function () {
     let resizeTimeout;
 
     /**
-     * Spinning loaders
+     * Spinning loaders.
      */
     let loaders = [...document.getElementsByClassName("plot loader")];
 
-    plot = [];
+    /**
+     * Plot containers.
+     */
+    let canvases = [...document.getElementsByClassName("plot")];
+
+    /**
+     * Plots.
+     */
+    let plots = [];
+
+    /**
+     * Time scale factor for the plots.
+     */
+    let timeScale = 20;
 
     publicAPI.init = function () {
-        /**
-     * Window function.
-     */
-        let g1 = new gaussianWindow(.5);
-        let g2 = new gaussianWindow(.2);
+
+        let g1 = new gaussianWindow(.5, { timeScale: timeScale });
 
         /**
          * Music sheet of Ode to Joy.
@@ -58,7 +68,7 @@ let plotsManager = new function () {
         /**
          * Music signal of Ode to Joy.
          */
-        let odeToJoy = new musicSignal(odeToJoySheet, { timeScale: 30 });
+        let odeToJoy = new musicSignal(odeToJoySheet, { timeScale: timeScale });
 
         let test1 = [
             [
@@ -68,46 +78,64 @@ let plotsManager = new function () {
             ]
         ];
 
-        let testSignal1 = new musicSignal(test1, { timeScale: 20 });
+        let testSignal1 = new musicSignal(test1, { timeScale: timeScale });
 
         let testMusicString = "[a#/1:1 a1/2:1 a2/1.5:0.5]; [g&1/2:1.5]";
 
-        let odeToJoySheet2 = "[e/1:1]"
-        let testSignal2 = new musicSignal(fromStringToMusic(testMusicString), {timeScale: 20});
+        let odeToJoySheet2 = "[e2/1:1 e2/1:1 f2/1:1 g2/1:1 g2/1:1.5 f2/1:0.5 e2/1:1 d2/1:1 c2/1:1 c2/1:1 d2/1:1 e2/1:1 d2/1.5:1 c2/0.5:1 c2/1:0.5 c2/1:0.25]; [c0/2:1 a1/2:1 b1/2:1 g0/2:1 a1/2:1 f0/2:1 d0/2:1 c0/2:1]";
+
+        let odeToJoy2 = new musicSignal(fromStringToMusic(odeToJoySheet2), { timeScale: timeScale });
+
+
+        let testSignal2 = new musicSignal(fromStringToMusic(testMusicString), { timeScale: timeScale });
 
         /**
          * Signal and Gabor plot.
          */
         plots = [
-            new signalPlot(1, testSignal2, { numPoints: 1000 }),
-            new windowPlot(2, g1, { signal: testSignal2, numPoints: 1000 }),
-            new gaborPlot(3, testSignal2, g1, { transformOptions: { N: 1500, padding: .2 } }),
+            new signalPlot(1, testSignal2),
+            new windowPlot(2, g1, { signal: testSignal2, N: 2000 }),
+            new gaborPlot(3, testSignal2, g1, { transformOptions: { N: 1000, padding: .2 } }),
         ];
     }
 
     window.onresize = () => {
-        plots.forEach((plot) => {
+        plots.forEach(plot => {
             // Resize the canvas
             plot.resizeCanvas();
         });
 
-        loaders.forEach((loader) => {
+        canvases.forEach(canvas => {
+            // Hides the canvases
+            canvas.style.opacity = 0;
+            canvas.style.visibility = "hidden";
+        });
+
+        loaders.forEach(loader => {
             // Displays the loader while waiting
+            loader.style.opacity = 1;
             loader.style.visibility = "visible";
             loader.style.animationPlayState = "running";
         });
 
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
-            plots.forEach((plot) => {
-                // Draws the plot after waiting (for better performances)
-                plot.drawPlot();
+            canvases.forEach(canvas => {
+                // Displays the canvases
+                canvas.style.opacity = 1;
+                canvas.style.visibility = "visible";
             });
 
-            loaders.forEach((loader) => {
-                // Displays the loader while waiting
+            loaders.forEach(loader => {
+                // Hides the loader
+                loader.style.opacity = 0;
                 loader.style.visibility = "hidden";
                 loader.style.animationPlayState = "paused";
+            });
+
+            plots.forEach(plot => {
+                // Draws the plot after waiting (for better performances)
+                plot.drawPlot();
             });
         }, waitTime);
     }
