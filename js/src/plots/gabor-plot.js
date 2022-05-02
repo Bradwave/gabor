@@ -114,7 +114,7 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
     |   Canvas
     */
 
-    const plot = new plotStructure(idNumber);
+    const plot = new plotStructure(idNumber, { alpha: false });
     const ctx = plot.getCtx();
 
     /**
@@ -167,6 +167,7 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
                     height - Math.round((j + freqRate) * cellHeight) - yPos
                 );
                 ctx.fill();
+                ctx.closePath();
             }
         }
     }

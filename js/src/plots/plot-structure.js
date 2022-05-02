@@ -3,7 +3,7 @@
   * @param {Number} idNumber 
   * @returns Public APIs.
   */
- let plotStructure = function (idNumber) {
+ let plotStructure = function (idNumber, options = []) {
 
     /**
      * Public methods.
@@ -29,7 +29,7 @@
     */
 
     const canvas = document.getElementById("canvas-" + idNumber);
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', options);
 
     /**
      * Resize the canvas to fill the HTML canvas element.

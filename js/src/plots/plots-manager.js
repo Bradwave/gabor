@@ -65,12 +65,12 @@ let plotsManager = new function () {
     /**
      * Time sampling rate.
      */
-    let timeRate = 6;
+    let timeRate = 5;
 
     /**
      * Frequency sampling rate.
      */
-    let freqRate = 8;
+    let freqRate = 15;
 
     /**
      * Padding for the Gabor transform plot.
