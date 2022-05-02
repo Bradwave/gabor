@@ -6,7 +6,7 @@ let plotsManager = new function () {
     /**
      * Public methods.
      */
-    let publicAPI = {};
+    let publicAPIs = {};
 
     /**
      * Number of milliseconds to wait after resizing.
@@ -15,6 +15,7 @@ let plotsManager = new function () {
     const waitTime = 200;
 
     let resizeTimeout;
+    let updateTimeout;
 
     /**
      * Spinning loaders.
@@ -32,94 +33,142 @@ let plotsManager = new function () {
     let plots = [];
 
     /**
+     * Sigma of the first window.
+     */
+    let sigma1 = 0.5;
+
+    /**
+     * Sigma of the second window.
+     */
+    let sigma2 = 1;
+
+    /**
+     * True if two windows are used, false otherwise.
+     */
+    let useTwoWindows = false;
+
+    /**
      * Time scale factor for the plots.
      */
     let timeScale = 20;
 
-    publicAPI.init = function () {
+    /**
+     * Number of sampled points for the signal and window.
+     */
+    let signalNumPoints = 1000;
 
-        let g1 = new gaussianWindow(.5, { timeScale: timeScale });
+    /**
+     * Number of sampled points for the Gabor transform.
+     */
+    let gaborNumPoints = 1000;
 
-        /**
-         * Music sheet of Ode to Joy.
-         */
-        let odeToJoySheet = [
-            [
-                { note: "e", d: 1, vol: .4 },
-                { note: "e", d: 1, vol: .6 },
-                { note: "f", d: 1, vol: .8 },
-                { note: "g", d: 1, vol: 1 },
-                { note: "g", d: 1, vol: 1 },
-                { note: "f", d: 1, vol: 1 },
-                { note: "e", d: 1, vol: 1 },
-                { note: "d", d: 1, vol: 1 },
-                { note: "c", d: 1, vol: 1 },
-                { note: "c", d: 1, vol: 1 },
-                { note: "d", d: 1, vol: 1 },
-                { note: "e", d: 1, vol: 1 },
-                { note: "d", d: 1.5, vol: 1 },
-                { note: "c", d: 0.5, vol: 1 },
-                { note: "c", d: 1, vol: 1 },
-                { note: "c", d: .5, vol: .6 },
-                { note: "c", d: .5, vol: .3 }
-            ]
-        ];
+    /**
+     * Time sampling rate.
+     */
+    let timeRate = 12;
 
-        /**
-         * Music signal of Ode to Joy.
-         */
-        let odeToJoy = new musicSignal(odeToJoySheet, { timeScale: timeScale });
+    /**
+     * Frequency sampling rate.
+     */
+    let freqRate = 8;
 
-        let test1 = [
-            [
-                { note: "e", oct: 0, d: 1, vol: 1 },
-                { note: "e", oct: 1, d: 1, vol: 1 },
-                { note: "e", oct: 2, d: 1, vol: 1 }
-            ]
-        ];
+    /**
+     * Padding for the Gabor transform plot.
+     */
+    let padding = .2;
 
-        let testSignal1 = new musicSignal(test1, { timeScale: timeScale });
+    /**
+     * Music sheet for the signal.
+     */
+    let musicSheet = "[a#/1:1 a1/2:1 a2/1.5:0.5]; [g&1/2:1.5]";
 
-        let testMusicString = "[a#/1:1 a1/2:1 a2/1.5:0.5]; [g&1/2:1.5]";
+    publicAPIs.update = function () {
+        //Signal setup
+        let signal;
+        try {
+            signal = new musicSignal(fromStringToMusic(musicSheet),
+                { N: signalNumPoints, timeScale: timeScale });
+        } catch (error) {
+            console.log(error);
+            signal = newMusicSignal(fromStringToMusic("a/1:1"),
+                { N: signalNumPoints, timeScale: timeScale });
+        }
 
-        let odeToJoySheet2 = "[e2/1:1 e2/1:1 f2/1:1 g2/1:1 g2/1:1.5 f2/1:0.5 e2/1:1 d2/1:1 c2/1:1 c2/1:1 d2/1:1 e2/1:1 d2/1.5:1 c2/0.5:1 c2/1:0.5 c2/1:0.25]; [c0/2:1 a1/2:1 b1/2:1 g0/2:1 a1/2:1 f0/2:1 d0/2:1 c0/2:1]";
+        // Window setup
+        const g1 = new gaussianWindow(sigma1,
+            { N: signalNumPoints, timeScale: timeScale });
+        const g2 = new gaussianWindow(sigma2,
+            { N: signalNumPoints, timeScale: timeScale });
 
-        let odeToJoy2 = new musicSignal(fromStringToMusic(odeToJoySheet2), { timeScale: timeScale });
-
-
-        let testSignal2 = new musicSignal(fromStringToMusic(testMusicString), { timeScale: timeScale });
-
-        /**
-         * Signal and Gabor plot.
-         */
+        // Signal, window and Gabor transform plots.
         plots = [
-            new signalPlot(1, testSignal2),
-            new windowPlot(2, g1, { signal: testSignal2, N: 2000 }),
-            new gaborPlot(3, testSignal2, g1, { transformOptions: { N: 1000, padding: .2 } }),
+            // Signal plot
+            new signalPlot(1, signal,
+                {
+                    N: signalNumPoints
+                }),
+            // Window plot
+            new windowPlot(2, g1,
+                {
+                    signal: signal,
+                    N: signalNumPoints,
+                    useTwoWindows: useTwoWindows,
+                    window2: g2
+                }),
+            // Gabor transform plot
+            new gaborPlot(3, signal, g1, {
+                transformOptions: {
+                    N: gaborNumPoints,
+                    padding: .2,
+                },
+                useTwoWindows: useTwoWindows,
+                window2: g2,
+                timeRate: timeRate,
+                freqRate: freqRate
+            }),
         ];
     }
 
+    // On window resize
     window.onresize = () => {
         plots.forEach(plot => {
             // Resize the canvas
             plot.resizeCanvas();
         });
 
-        canvases.forEach(canvas => {
-            // Hides the canvases
-            canvas.style.opacity = 0;
-            canvas.style.visibility = "hidden";
-        });
-
-        loaders.forEach(loader => {
-            // Displays the loader while waiting
-            loader.style.opacity = 1;
-            loader.style.visibility = "visible";
-            loader.style.animationPlayState = "running";
-        });
+        setLoadingStyle(true);
 
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
+            setLoadingStyle(false);
+
+            plots.forEach(plot => {
+                // Draws the plot after waiting (for better performances)
+                plot.drawPlot();
+            });
+        }, waitTime);
+    }
+
+    // On window click (get focus)
+    window.onclick = (e) => {
+        e.target.focus();
+    }
+
+    function setLoadingStyle(isLoading, opacity = 0) {
+        if (isLoading) {
+            canvases.forEach(canvas => {
+                // Hides the canvases
+                canvas.style.opacity = opacity;
+                canvas.style.visibility = "hidden";
+            });
+
+            loaders.forEach(loader => {
+                // Displays the loader while waiting
+                loader.style.opacity = 1;
+                loader.style.visibility = "visible";
+                loader.style.animationPlayState = "running";
+            });
+        } else {
             canvases.forEach(canvas => {
                 // Displays the canvases
                 canvas.style.opacity = 1;
@@ -132,16 +181,7 @@ let plotsManager = new function () {
                 loader.style.visibility = "hidden";
                 loader.style.animationPlayState = "paused";
             });
-
-            plots.forEach(plot => {
-                // Draws the plot after waiting (for better performances)
-                plot.drawPlot();
-            });
-        }, waitTime);
-    }
-
-    window.onclick = (e) => {
-        e.target.focus();
+        }
     }
 
     /*_______________________________________
@@ -149,9 +189,32 @@ let plotsManager = new function () {
     */
 
     /**
+     * Textarea for the music sheet
+     */
+    let textarea = document.getElementById("music-sheet");
+
+    // Textarea height auto-adjust
+    textarea.setAttribute("style",
+        "height:" + (textarea.scrollHeight - 20) + "px; overflow-y:hidden;");
+    textarea.addEventListener("input", OnInput, false);
+
+    function OnInput() {
+        this.style.height = "auto";
+        this.style.height = (this.scrollHeight - 20) + "px";
+    }
+
+    // Sets listeners for textarea
+    textarea.onchange = () => {
+        musicSheet = textarea.value;
+        changePlot();
+    }
+
+    /**
      * Ids of input boxes for the ring plot.
      */
-    let inputIds = [];
+    let inputIds = ['signal-num-points', 'time-scale',
+        'sigma-1', 'sigma-2',
+        'gabor-num-points', 't-rate', 'f-rate', 'zoom'];
 
     /**
      * Input boxes for ring plot.
@@ -162,7 +225,7 @@ let plotsManager = new function () {
         plotInputs.set(id, document.getElementById(id));
     })
 
-    // Sets listeners
+    // Sets listeners for input boxes
     plotInputs.forEach((input) => {
         input.onchange = () => {
             changePlot();
@@ -173,7 +236,32 @@ let plotsManager = new function () {
      * Update plot when input boxes change.
      */
     function changePlot() {
+        setLoadingStyle(true, 0.15);
+        setTimeout(function () {
 
+            // Signal
+            signalNumPoints = getInputNumber(plotInputs, 'signal-num-points');
+            timeScale = getInputNumber(plotInputs, 'time-scale');
+
+            // Window
+            sigma1 = getInputNumber(plotInputs, 'sigma-1');
+            const sigma2Input = plotInputs.get('sigma-2').value;
+            if (sigma2Input.localeCompare("no") == 0) {
+                useTwoWindows = false;
+            } else {
+                useTwoWindows = true;
+                sigma2 = getInputNumber(plotInputs, 'sigma-2')
+            }
+
+            // Gabor
+            gaborNumPoints = getInputNumber(plotInputs, 'gabor-num-points');
+            timeRate = getInputNumber(plotInputs, 't-rate');
+            freqRate = getInputNumber(plotInputs, 'f-rate');
+            padding = getInputNumber(plotInputs, 'zoom');
+
+            publicAPIs.update();
+            setLoadingStyle(false);
+        }, 50);
     }
 
     /**
@@ -187,5 +275,5 @@ let plotsManager = new function () {
         return newValue;
     }
 
-    return publicAPI;
+    return publicAPIs;
 }

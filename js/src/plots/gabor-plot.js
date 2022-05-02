@@ -37,16 +37,6 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
     let numPoints;
 
     /**
-     * Number of sampled time points.
-     */
-    let timeNumPoints;
-
-    /**
-     * Number of sampled frequency points.
-     */
-    let freqNumPoints;
-
-    /**
      * Width of a plot cell.
      */
     let cellWidth;
@@ -60,6 +50,16 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
      * Gabor transform structure.
      */
     let gaborTransform;
+
+    /**
+     * True if two windows are used, false otherwise.
+     */
+    let useTwoWindows;
+
+    /**
+     * Second transform.
+     */
+    let gaborTransform2;
 
     /**
      * Rate of sampled time points.
@@ -78,21 +78,34 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
      * @param {*} options 
      */
     publicAPIs.updatePlot = (inputSignal, inputWindowFunction, options) => {
+        // Sets the time and frequency sample rate
         timeRate = toDefaultIfUndefined(options.timeRate, 8);
         freqRate = toDefaultIfUndefined(options.freqRate, 12);
 
         options.transformOptions["timeRate"] = timeRate;
         options.transformOptions["freqRate"] = freqRate;
 
+        // Sets the Gabor transform
         gaborTransform = new gaborTransformStructure(
             inputSignal, inputWindowFunction,
             options.transformOptions
         );
 
-        numPoints = gaborTransform.getNumPoints();
+        // Sets the Gabor transform if the second window is present
+        useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
+        if (useTwoWindows) {
+            console.log(options.window2)
+            if (typeof options.window2 === 'undefined') {
+                useTwoWindows = false;
+            } else {
+                gaborTransform2 = new gaborTransformStructure(
+                    inputSignal, options.window2, options.transformOptions
+                );
+            }
+        }
 
-        timeNumPoints = Math.round(numPoints / timeRate);
-        freqNumPoints = Math.round(numPoints / freqRate);
+        // Get number of po
+        numPoints = gaborTransform.getNumPoints();
     }
 
     // Creates the plot
@@ -130,11 +143,16 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
                 // Gabor transform
                 const vgf = gaborTransform.valueAt(i, j / freqRate);
                 // Spectrogram
-                const spectrogram = vgf.abs(); // Math.sqrt(vgf.amp());
+                let spectrogram = vgf.abs();
+
+                // Adds second Gabor transform if present
+                if (useTwoWindows) {
+                    spectrogram *= gaborTransform2.valueAt(i, j / freqRate).abs();
+                }
 
                 // Position of the cell
-                const xPos = Math.round(i / numPoints * width);
-                const yPos = height - Math.round(j / numPoints * height)
+                const xPos = Math.round(i * cellWidth);
+                const yPos = height - Math.round(j * cellHeight)
                 // Grey value of the cell
                 const alpha = - Math.exp(- spectrogram) + 1;
 
@@ -146,8 +164,8 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
                     + (255 - alpha * 255) + ")";
                 ctx.rect(
                     xPos, yPos,
-                    Math.round((i + timeRate) / numPoints * width) - xPos,
-                    height - Math.round((j + freqRate) / numPoints * height) - yPos
+                    Math.round((i + timeRate) * cellWidth) - xPos,
+                    height - Math.round((j + freqRate) * cellHeight) - yPos
                 );
                 ctx.fill();
             }

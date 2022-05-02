@@ -46,9 +46,24 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
     let windowFunction;
 
     /**
+     * Second window function.
+     */
+    let windowFunction2;
+
+    /**
+     * True if two windows are used, false otherwise.
+     */
+    let useTwoWindows;
+
+    /**
      * Sampled window function.
      */
     let sampledWindow;
+
+    /**
+     * Sampled second window function.
+     */
+    let sampledWindow2
 
     /**
      * Signal function.
@@ -74,15 +89,28 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
         // Updates window function
         windowFunction = inputWindowFunction;
 
+        // Updates the second window if present
+        console.log(options.useTwoWindows)
+        useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
+        if (useTwoWindows) windowFunction2 = toDefaultIfUndefined(options.window2,
+            new gaussianWindow(1,
+                { N: windowFunction.getNumPoints(), timeScale: windowFunction.getTimeScale() }
+            )
+        );
+
         // Updates signal if present
         showSignal = typeof options.signal === 'undefined' ? false : true;
         if (showSignal) signal = options.signal;
 
-
         // Updates sampled window and signal
         if (typeof options.N === 'undefined') {
+            // Updates when "N" is not specified
             numPoints = windowFunction.getNumPoints();
+            // Updates sampled window
             sampledWindow = windowFunction.getSampled();
+            // Updates second sampled window if present
+            if (useTwoWindows) sampledWindow2 = windowFunction2.getSampled();
+            // Updates signal if present
             if (showSignal) {
                 if (signal.getNumPoints() !== numPoints) {
                     sampledSignal = signal.getSampled(numPoints)
@@ -91,10 +119,17 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
                 }
             }
         } else {
+            // Updates "N" when specified
             numPoints = options.N;
+            // Updates sampled window
             sampledWindow = windowFunction.getSampled(numPoints);
+            // Updates second sampled window if present
+            if (useTwoWindows) sampledWindow2 = windowFunction2.getSampled(numPoints)
+            // Updates signal if present
             if (showSignal) sampledSignal = signal.getSampled(numPoints);
         }
+
+        console.log(useTwoWindows)
 
         // Sets the scale according to the amplitude
         yScale = showSignal ? toDefaultIfUndefined(options.yScale, 0.4 / signal.getAmp()) : 0.8;
@@ -156,7 +191,24 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
             }
             ctx.stroke();
 
-            ctx.strokeStyle = "#000000"
+            // Draws the second window if present
+            if (useTwoWindows) {
+                ctx.strokeStyle = "#06688c"
+                ctx.lineWidth = 1.15;
+
+                ctx.beginPath();
+                ctx.moveTo(0, height * 0.5);
+                for (let i = 1; i < numPoints; i++) {
+                    const w = sampledWindow2[numPoints + i - Math.round(windowPosition * numPoints)];
+                    ctx.lineTo(
+                        i / numPoints * width,
+                        height * (0.5 - yScale * w * sampledSignal[i])
+                    );
+                }
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = "#8c1500"
             ctx.lineWidth = 1.25;
 
             ctx.beginPath();
@@ -166,6 +218,24 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
                 ctx.lineTo(
                     i / numPoints * width,
                     height * (0.5 - yScale * w * sampledSignal[i])
+                );
+            }
+            ctx.stroke();
+        }
+
+        // Draws the second window if present
+        if (useTwoWindows) {
+            ctx.strokeStyle = "#0c95c7";
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.setLineDash([]);
+            ctx.moveTo(0, height * 0.5);
+            for (let i = 1; i < numPoints; i++) {
+                const w = sampledWindow2[numPoints + i - Math.round(windowPosition * numPoints)];
+                ctx.lineTo(
+                    i / numPoints * width,
+                    height * (0.5 - yScale * w)
                 );
             }
             ctx.stroke();

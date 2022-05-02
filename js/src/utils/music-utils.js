@@ -36,8 +36,10 @@ const fromStringToMusic = (musicString) => {
 
             // Divides the note name from the octave
             let noteValue = noteStructure[0];
-            let noteOctave = isNaN(noteValue.slice(-1)) ? 0 : parseInt(noteValue.slice(-1));
-            let noteName = noteValue.slice(0, -1);
+
+            const withOctave = isNaN(noteValue.slice(-1));
+            let noteOctave = withOctave ? 0 : parseInt(noteValue.slice(-1));
+            let noteName = withOctave ? noteValue : noteValue.slice(0, -1);
 
             // Divides the note duration from the volume
             let noteProperties = noteStructure[1].split(":");
@@ -53,6 +55,5 @@ const fromStringToMusic = (musicString) => {
             });
         })
     });
-
     return musicSheet;
 }

@@ -116,6 +116,14 @@ let gaussianWindow = function (sigma, options = []) {
     }
 
     /**
+     * Get the time scale factor of the window.
+     * @returns The time scale factor.
+     */
+    publicAPIs.getTimeScale = function () {
+        return timeScale;
+    }
+
+    /**
      * Get the sampled window.
      * @param {Number} N Number of points to be sampled.
      * @returns The sampled window.
@@ -170,15 +178,20 @@ let gaussianWindow = function (sigma, options = []) {
 
 /**
  * Musical signal f(x)
- * @param {*} tracks 
+ * @param {*} inputTracks 
  * @param {*} options 
  */
-let musicSignal = function (tracks, options = []) {
+let musicSignal = function (inputTracks, options = []) {
 
     /**
      * Public methods.
      */
     let publicAPIs = {};
+
+    /**
+     * Tracks for the signal.
+     */
+    let tracks;
 
     /**
      * Frequency of the fundamental A note (in Hz).
@@ -189,6 +202,11 @@ let musicSignal = function (tracks, options = []) {
      * Track duration.
      */
     let duration;
+
+    /**
+     * Duration of the isolated tracks.
+     */
+    let tracksLength = [];
 
     /**
      * Time scale factor.
@@ -204,19 +222,26 @@ let musicSignal = function (tracks, options = []) {
      * Returns time duration of the music signal.
      */
     publicAPIs.getDuration = function () {
-        let duration = 0;
+        return Math.max(...tracksLength);
+    }
 
-        tracks.forEach(track => {
+    /**
+     * Returns the length of each track.
+     */
+    const getTracksLength = function () {
+        let tracksLength = [];
+
+        tracks.forEach((track, i) => {
             let d = 0;
 
             track.forEach(note => {
                 d += note.d;
             })
 
-            if (d > duration) duration = d;
+            tracksLength[i] = d * timeScale;
         });
 
-        return duration * timeScale;
+        return tracksLength;
     }
 
     /**
@@ -298,24 +323,25 @@ let musicSignal = function (tracks, options = []) {
     publicAPIs.valueAt = (x) => {
         let time = x * duration / timeScale;
 
-        if (time > 0 || time < duration) {
+        if (time > 0 || time < duration / timeScale) {
             let fx = 0;
             let freq = 0;
 
-            tracks.forEach(track => {
-                let i = 0;
-                let dt = 0;
+            tracks.forEach((track, j) => {
+                if (time < tracksLength[j] / timeScale) {
+                    let i = 0;
+                    let dt = 0;
 
-                while (dt + track[i].d < time && i + 1 < track.length) {
-                    dt += track[i].d;
-                    i++;
-                };
+                    while (dt + track[i].d < time && i + 1 < track.length) {
+                        dt += track[i].d;
+                        i++;
+                    };
 
-                freq = noteToFreq(track[i].note, toDefaultIfUndefined(track[i].oct, 0));
-                fx += track[i].vol // Amplitude
-                    * Math.sin((2 * Math.PI * freq / linearSpeed) * (time * timeScale));
+                    freq = noteToFreq(track[i].note, toDefaultIfUndefined(track[i].oct, 0));
+                    fx += track[i].vol // Amplitude
+                        * Math.sin((2 * Math.PI * freq / linearSpeed) * (time * timeScale));
+                }
             });
-
             return fx;
         } else {
             return 0;
@@ -336,18 +362,21 @@ let musicSignal = function (tracks, options = []) {
      * Updates the signal.
      * @param {*} options
      */
-    publicAPIs.update = (options = []) => {
+    publicAPIs.update = (inputTracks, options = []) => {
+        tracks = inputTracks;
+
         baseFreq = toDefaultIfUndefined(options.baseFreq, 1);
         linearSpeed = toDefaultIfUndefined(options.linearSpeed, 1);
         timeScale = toDefaultIfUndefined(options.timeScale, 1);
 
+        tracksLength = getTracksLength();
         duration = publicAPIs.getDuration();
 
         sampledSignal = sample(toDefaultIfUndefined(options.N, 1000));
     }
 
     // Creates the signal.
-    publicAPIs.update(options);
+    publicAPIs.update(inputTracks, options);
 
     // Returns public methods
     return publicAPIs;
@@ -457,8 +486,8 @@ let gaborTransformStructure = function (inputSignal, inputWindowFunction, option
         padding = toDefaultIfUndefined(options.padding, .1) * rangeDiff;
 
         numPoints = toDefaultIfUndefined(options.N, 400);
-        freqRate = options.freqRate;
         timeRate = options.timeRate;
+        freqRate = options.freqRate;
         dt = signalDuration / numPoints;
 
         if (typeof options.N === 'undefined') {

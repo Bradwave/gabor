@@ -14,6 +14,7 @@
         2.3 Canvas
         2.4 Loaders
         2.5 Input box
+        2.6 Textarea
         
 ===================================== */
 
@@ -105,11 +106,23 @@
 .page-container {
     display: grid;
     gap: 10px;
-    grid-template-columns: minmax(150px, 1fr) 4fr 1fr;
+    grid-template-columns: minmax(150px, 1fr) 2fr 1fr;
 }
 
 .page-content {
     padding: 10px;
+}
+
+@media (max-width: 1500px) {
+    .page-container {
+        grid-template-columns: minmax(150px, 1fr) 3fr 1fr;
+    }
+}
+
+@media (max-width: 1000px) {
+    .page-container {
+        grid-template-columns: minmax(150px, 1fr) 4fr 1fr;
+    }
 }
 
 @media (max-width: 768px), (orientation: portrait), (hover: none) {
@@ -127,7 +140,7 @@
 body {
     margin: 0;
     background-color: var(--background);
-    font-family: 'STIX Two Text', serif;
+    font-family: 'Roboto-Mono', monospace;
     color: var(--secondary);
     counter-reset: part;
     counter-reset: section;
@@ -142,7 +155,7 @@ body {
 
 p {
     font-weight: normal;
-    font-size: 16px;
+    font-size: 10pt;
 }
 
 li {
@@ -159,6 +172,20 @@ mark {
 
 a {
     color: var(--accent);
+}
+
+/* -- Label -- */
+
+span.label {
+    background-color: var(--secondary);
+    color: var(--background);
+    margin-right: 10px;
+    padding-top: 3px;
+    padding-bottom: 4px;
+    padding-left: 5px;
+    padding-right: 5px;
+    border-radius: 4px;
+    font-size: 10pt;
 }
 
 /* -- 2.2 Canvas -- */
@@ -279,12 +306,6 @@ div.input-container {
     font-weight: 600;
 }
 
-textarea.input-area {
-    resize: none;
-    outline: none;
-    border: 0px;
-}
-
 input.input-box {
     min-width: 10px;
     width: 40px;
@@ -320,4 +341,20 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
 
 input[type=number] {
     -moz-appearance: textfield;
+}
+
+/* -- 2.3 Textarea -- */
+
+textarea.input-area {
+    resize: none;
+    outline: none;
+    border: 0px;
+    padding: 10px;
+    color: #5c5c5c;
+    background-color: #00000000;
+    outline: none;
+    border-width: 0;
+    font-size: 9pt;
+    caret-color: #8d8d8d;
+    transition: all .3 ease-in-out;
 }

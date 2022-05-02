@@ -32,23 +32,62 @@
         </nav>
         <main class="page-content" id="page-content">
 
-            <div style="height: 10pt;"></div>
+            <div style="display: grid; place-items: center; margin-top: 20px;">
+                <span class="label">spectrogram of a signal</span>
+            </div>
 
-            <div class="plot-container" id="plot-1" style="margin-top: 20px;">
+            <div style="height: 20pt;"></div>
+
+            <div class="plot-container" id="plot-1">
                 <canvas class="plot" id="canvas-1" tabindex="1" style="height: 75px;"></canvas>
                 <div id="loader-1" class="plot loader"></div>
             </div>
 
-            <div style="height: 10pt;"></div>
+            <div style="height: 15pt;"></div>
 
             <div class="plot-container" id="plot-2">
                 <canvas class="plot window-plot" id="canvas-2" tabindex="3" style="height: 75px;"></canvas>
                 <div id="loader-2" class="plot loader"></div>
             </div>
 
-            <div class="plot-container" id="plot-3" style="margin-top: 30px;">
+            <div style="height: 30pt;"></div>
+
+            <div class="plot-container" id="plot-3">
                 <canvas class="plot" id="canvas-3" tabindex="4" style="height: 200px;"></canvas>
                 <div id="loader-3" class="plot loader"></div>
+            </div>
+
+            <div style="height: 20pt;"></div>
+
+            <div class="input-container" id="input-container-1">
+                <div>
+                    <textarea class="input-area" id="music-sheet" cols="55"
+                        rows="1">[a#/1:1 a1/2:1 a2/1.5:0.5]; [g&1/2:1.5]</textarea>
+                </div>
+                <div style="margin-top: 10px;">
+                    <div>
+                        signal | N:
+                        <input id="signal-num-points" class="input-box" type="text" maxlength="5" value="1000">
+                        time-scale:
+                        <input id="time-scale" class="input-box" type="text" maxlength="3" value="20">
+                    </div>
+                    <div style="margin-top: 5px;">
+                        window | sigma-1:
+                        <input id="sigma-1" class="input-box" type="text" maxlength="5" value="0.5">
+                        sigma-2:
+                        <input id="sigma-2" class="input-box" type="text" maxlength="5" value="no">
+                    </div>
+                    <div style="margin-top: 5px;">
+                        gabor&nbsp | N:
+                        <input id="gabor-num-points" class="input-box" type="text" maxlength="5" value="1000">
+                        t-rate:
+                        <input id="t-rate" class="input-box" type="text" maxlength="3" value="8">
+                        f-rate:
+                        <input id="f-rate" class="input-box" type="text" maxlength="3" value="12">
+                        zoom:
+                        <input id="zoom" class="input-box" type="text" maxlength="4" value=".1">
+                    </div>
+                </div>
             </div>
 
         </main>
