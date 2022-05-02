@@ -4,7 +4,7 @@ This simple implementation of the Gabor transform (or short time Fourier transfo
 
 The following parameters can be modified.
 
-For `Signal`:
+For `signal`:
 - `N` is the number of sampled points for both the signal and the windows;
 - `time-scale` controls the length of the signal.
 

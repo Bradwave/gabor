@@ -1,13 +1,15 @@
 /**
  * Map of notes and their corresponding number value.
  */
-const notesMap = new Map();
-
-for (i = 0; i < 12; i++) {
-    notesMap.set(String.fromCharCode(97 + i) + "&", i - 1);
-    notesMap.set(String.fromCharCode(97 + i), i);
-    notesMap.set(String.fromCharCode(97 + i) + "#", i + 1);
-}
+const notesMap = new Map([
+    ["a&", -1], ["a", 0], ["a#", 1],
+    ["b&", 1], ["b", 2], ["b#", 3],
+    ["c&", 2], ["c", 3], ["c#", 4],
+    ["d&", 4], ["d", 5], ["c#", 6],
+    ["d&", 6], ["d", 7], ["d#", 8],
+    ["f&", 7], ["f", 8], ["f#", 9],
+    ["g&", 9], ["g", 10], ["g#", 11]
+]);
 
 /**
  * Converts a string of text (appropriately formatted) in a music sheet readable by the program.

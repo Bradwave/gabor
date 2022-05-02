@@ -65,7 +65,7 @@ let plotsManager = new function () {
     /**
      * Time sampling rate.
      */
-    let timeRate = 12;
+    let timeRate = 6;
 
     /**
      * Frequency sampling rate.
@@ -80,9 +80,11 @@ let plotsManager = new function () {
     /**
      * Music sheet for the signal.
      */
-    let musicSheet = "[a#/1 a1/2:2 a2/1.5:0.5]; [g&1/2:1.5 _/1.5 g1/0.5]";
+    let musicSheet = "[a#/1 a1/2:2 a2/1.5:0.5]; [f1/2:1.5 _/1.5 g&1/0.5]";
 
     publicAPIs.update = function () {
+        updateInputBoxes();
+
         //Signal setup
         let signal;
         try {
@@ -233,32 +235,36 @@ let plotsManager = new function () {
     });
 
     /**
+     * Updates the input boxes and the respective variables.
+     */
+    function updateInputBoxes() {
+        // Signal
+        signalNumPoints = getInputNumber(plotInputs, 'signal-num-points');
+        timeScale = getInputNumber(plotInputs, 'time-scale');
+
+        // Window
+        sigma1 = getInputNumber(plotInputs, 'sigma-1');
+        const sigma2Input = plotInputs.get('sigma-2').value;
+        if (sigma2Input.localeCompare("no") == 0) {
+            useTwoWindows = false;
+        } else {
+            useTwoWindows = true;
+            sigma2 = getInputNumber(plotInputs, 'sigma-2')
+        }
+
+        // Gabor
+        gaborNumPoints = getInputNumber(plotInputs, 'gabor-num-points');
+        timeRate = getInputNumber(plotInputs, 't-rate');
+        freqRate = getInputNumber(plotInputs, 'f-rate');
+        padding = getInputNumber(plotInputs, 'zoom');
+    }
+
+    /**
      * Update plot when input boxes change.
      */
     function changePlot() {
         setLoadingStyle(true, 0.15);
         setTimeout(function () {
-
-            // Signal
-            signalNumPoints = getInputNumber(plotInputs, 'signal-num-points');
-            timeScale = getInputNumber(plotInputs, 'time-scale');
-
-            // Window
-            sigma1 = getInputNumber(plotInputs, 'sigma-1');
-            const sigma2Input = plotInputs.get('sigma-2').value;
-            if (sigma2Input.localeCompare("no") == 0) {
-                useTwoWindows = false;
-            } else {
-                useTwoWindows = true;
-                sigma2 = getInputNumber(plotInputs, 'sigma-2')
-            }
-
-            // Gabor
-            gaborNumPoints = getInputNumber(plotInputs, 'gabor-num-points');
-            timeRate = getInputNumber(plotInputs, 't-rate');
-            freqRate = getInputNumber(plotInputs, 'f-rate');
-            padding = getInputNumber(plotInputs, 'zoom');
-
             publicAPIs.update();
             setLoadingStyle(false);
         }, 50);
