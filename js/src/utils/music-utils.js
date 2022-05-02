@@ -37,14 +37,18 @@ const fromStringToMusic = (musicString) => {
             // Divides the note name from the octave
             let noteValue = noteStructure[0];
 
+            const isSilence = noteValue.localeCompare("_");
             const withOctave = isNaN(noteValue.slice(-1));
-            let noteOctave = withOctave ? 0 : parseInt(noteValue.slice(-1));
-            let noteName = withOctave ? noteValue : noteValue.slice(0, -1);
+            const noteOctave = isSilence == 0 ? 0 :
+                (withOctave ? 0 : parseInt(noteValue.slice(-1)));
+            const noteName = isSilence == 0 ? "a" :
+                (withOctave ? noteValue : noteValue.slice(0, -1));
 
             // Divides the note duration from the volume
             let noteProperties = noteStructure[1].split(":");
             let noteDuration = parseFloat(noteProperties[0]);
-            let noteVolume = toDefaultIfUndefined(parseFloat(noteProperties[1]), 1);
+            let noteVolume = isSilence == 0 ? 0 :
+                parseFloat(toDefaultIfUndefined(noteProperties[1], 1));
 
             // Adds the note the track
             musicSheet[i].push({

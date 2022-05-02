@@ -94,7 +94,6 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
         // Sets the Gabor transform if the second window is present
         useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
         if (useTwoWindows) {
-            console.log(options.window2)
             if (typeof options.window2 === 'undefined') {
                 useTwoWindows = false;
             } else {

@@ -80,7 +80,7 @@ let plotsManager = new function () {
     /**
      * Music sheet for the signal.
      */
-    let musicSheet = "[a#/1:1 a1/2:1 a2/1.5:0.5]; [g&1/2:1.5]";
+    let musicSheet = "[a#/1 a1/2:2 a2/1.5:0.5]; [g&1/2:1.5 _/1.5 g1/0.5]";
 
     publicAPIs.update = function () {
         //Signal setup
@@ -119,7 +119,7 @@ let plotsManager = new function () {
             new gaborPlot(3, signal, g1, {
                 transformOptions: {
                     N: gaborNumPoints,
-                    padding: .2,
+                    padding: padding,
                 },
                 useTwoWindows: useTwoWindows,
                 window2: g2,

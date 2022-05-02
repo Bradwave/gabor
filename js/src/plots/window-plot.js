@@ -90,7 +90,6 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
         windowFunction = inputWindowFunction;
 
         // Updates the second window if present
-        console.log(options.useTwoWindows)
         useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
         if (useTwoWindows) windowFunction2 = toDefaultIfUndefined(options.window2,
             new gaussianWindow(1,
@@ -128,8 +127,6 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
             // Updates signal if present
             if (showSignal) sampledSignal = signal.getSampled(numPoints);
         }
-
-        console.log(useTwoWindows)
 
         // Sets the scale according to the amplitude
         yScale = showSignal ? toDefaultIfUndefined(options.yScale, 0.4 / signal.getAmp()) : 0.8;
