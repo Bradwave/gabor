@@ -1,4 +1,4 @@
-# An Implementation of the Gabor Transform, Spec
+# A Gabor Transform Implementation
 
 This simple implementation of the Gabor transform (or short time Fourier transform, STFT) allows a musical signal to be analyzed via its spectrogram. Moreover, it is possibile to use two windows to analyze the signal.
 
