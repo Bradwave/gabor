@@ -11,6 +11,7 @@
 
     <title>Gabor Transform</title>
 
+    <link rel="icon" type="image/png" href="imgs/icon.png">
     <link rel="stylesheet" href="css/crimson-days.css">
 
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -28,15 +29,15 @@
 
     <div class="page-container" id="page-container" style="visibility: hidden; opacity: 0;">
         <nav class="page-sidebar">
-
+            
         </nav>
         <main class="page-content" id="page-content">
 
-            <div style="display: grid; place-items: center; margin-top: 30px;">
+            <div style="display: grid; place-items: center; margin-top: 10px;">
                 <span class="label">spectrogram of a signal</span>
             </div>
 
-            <div style="height: 25pt;"></div>
+            <div style="height: 20pt;"></div>
 
             <div class="plot-container" id="plot-1">
                 <canvas class="plot" id="canvas-1" tabindex="1" style="height: 75px;"></canvas>
@@ -59,7 +60,7 @@
 
             <div style="height: 20pt;"></div>
 
-            <div class="input-container" id="input-container-1">
+            <div class="input-container" id="input-container-1" style="margin-bottom: 10px;">
                 <div>
                     <textarea class="input-area" id="music-sheet" cols="55"
                         rows="1">[a#/1 a1/2:2 a2/1.5:0.5]; [f1/2:1.5 _/1.5 g&1/0.5]</textarea>
@@ -91,6 +92,9 @@
             </div>
 
         </main>
+        <nav class="page-sidebar">
+            
+        </nav>
 
         <script src="js/src/page-controller.js"></script>
         <script src="js/src/utils/utils.js"></script>
