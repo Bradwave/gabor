@@ -229,12 +229,24 @@ canvas.plot {
     cursor: crosshair;
 }
 
+canvas.plot.stacked {
+    position: absolute;
+}
+
 /* Activate for focus outline */
 
 canvas.plot:focus {
     outline: none;
-    box-shadow: 0 0 20px #00000030;
+}
+
+canvas.plot.main:focus {
     transform: translate(0px, -2px);
+    box-shadow: 0 0 20px #00000030;
+}
+
+canvas.focused {
+    transform: translate(0px, -2px);
+    box-shadow: 0 0 20px #00000030;
 }
 
 /* */

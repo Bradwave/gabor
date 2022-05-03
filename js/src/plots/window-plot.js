@@ -101,32 +101,21 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
         showSignal = typeof options.signal === 'undefined' ? false : true;
         if (showSignal) signal = options.signal;
 
-        // Updates sampled window and signal
+        // Updates the number of sampled points
         if (typeof options.N === 'undefined') {
             // Updates when "N" is not specified
             numPoints = windowFunction.getNumPoints();
-            // Updates sampled window
-            sampledWindow = windowFunction.getSampled();
-            // Updates second sampled window if present
-            if (useTwoWindows) sampledWindow2 = windowFunction2.getSampled();
-            // Updates signal if present
-            if (showSignal) {
-                if (signal.getNumPoints() !== numPoints) {
-                    sampledSignal = signal.getSampled(numPoints)
-                } else {
-                    sampledSignal = signal.getSampled();
-                }
-            }
         } else {
             // Updates "N" when specified
             numPoints = options.N;
-            // Updates sampled window
-            sampledWindow = windowFunction.getSampled(numPoints);
-            // Updates second sampled window if present
-            if (useTwoWindows) sampledWindow2 = windowFunction2.getSampled(numPoints)
-            // Updates signal if present
-            if (showSignal) sampledSignal = signal.getSampled(numPoints);
         }
+
+        // Updates sampled window
+        sampledWindow = windowFunction.getSampled(numPoints);
+        // Updates second sampled window if present
+        if (useTwoWindows) sampledWindow2 = windowFunction2.getSampled(numPoints);
+        // Updates signal if present
+        if (showSignal) sampledSignal = signal.getSampled(numPoints);
 
         // Sets the scale according to the amplitude
         yScale = showSignal ? toDefaultIfUndefined(options.yScale, 0.4 / signal.getAmp()) : 0.8;

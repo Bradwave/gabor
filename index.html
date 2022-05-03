@@ -40,22 +40,23 @@
             <div style="height: 20pt;"></div>
 
             <div class="plot-container" id="plot-1">
-                <canvas class="plot" id="canvas-1" tabindex="1" style="height: 75px;"></canvas>
-                <div id="loader-1" class="plot loader"></div>
+                <canvas name = "plot" class="plot main" id="canvas-1" tabindex="1" style="height: 75px;"></canvas>
+                <div name = "plot-loader" id="loader-1" class="plot loader"></div>
             </div>
 
             <div style="height: 15pt;"></div>
 
             <div class="plot-container" id="plot-2">
-                <canvas class="plot window-plot" id="canvas-2" tabindex="3" style="height: 75px;"></canvas>
-                <div id="loader-2" class="plot loader"></div>
+                <canvas name = "plot" class="plot main" id="canvas-2" tabindex="3" style="height: 75px;"></canvas>
+                <div name = "plot-loader" id="loader-2" class="plot loader"></div>
             </div>
 
             <div style="height: 30pt;"></div>
 
             <div class="plot-container" id="plot-3">
-                <canvas class="plot" id="canvas-3" tabindex="4" style="height: 200px;"></canvas>
-                <div id="loader-3" class="plot loader"></div>
+                <canvas name = "plot" class="plot" id="canvas-3" tabindex="4" style="height: 200px;"></canvas>
+                <canvas name = "plot" class="plot stacked" id="canvas-4" tabindex="5" style="height: 200px;"></canvas>
+                <div name = "plot-loader" id="loader-3" class="plot loader"></div>
             </div>
 
             <div style="height: 20pt;"></div>
@@ -68,7 +69,7 @@
                 <div style="margin-top: 10px;">
                     <div>
                         signal | N:
-                        <input id="signal-num-points" class="input-box" type="text" maxlength="5" value="1000">
+                        <input id="signal-num-points" class="input-box" type="text" maxlength="5" value="1200">
                         time-scale:
                         <input id="time-scale" class="input-box" type="text" maxlength="3" value="20">
                     </div>
@@ -80,7 +81,7 @@
                     </div>
                     <div style="margin-top: 5px;">
                         gabor&nbsp | N:
-                        <input id="gabor-num-points" class="input-box" type="text" maxlength="5" value="1000">
+                        <input id="gabor-num-points" class="input-box" type="text" maxlength="5" value="1200">
                         t-rate:
                         <input id="t-rate" class="input-box" type="text" maxlength="3" value="5">
                         f-rate:
@@ -104,6 +105,7 @@
         <script src="js/src/plots/signal-plot.js"></script>
         <script src="js/src/plots/window-plot.js"></script>
         <script src="js/src/plots/gabor-plot.js"></script>
+        <script src="js/src/plots/fourier-plot.js"></script>
         <script src="js/src/plots/plots-manager.js"></script>
 </body>
 

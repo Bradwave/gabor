@@ -1,7 +1,8 @@
 /**
  * Manages plots, sort of...
+ * @returns Public APIs.
  */
-let plotsManager = new function () {
+const plotsManager = new function () {
 
     /**
      * Public methods.
@@ -15,17 +16,16 @@ let plotsManager = new function () {
     const waitTime = 200;
 
     let resizeTimeout;
-    let updateTimeout;
 
     /**
      * Spinning loaders.
      */
-    let loaders = [...document.getElementsByClassName("plot loader")];
+    let loaders = [...document.getElementsByName("plot-loader")];
 
     /**
      * Plot containers.
      */
-    let canvases = [...document.getElementsByClassName("plot")];
+    let canvases = [...document.getElementsByName("plot")];
 
     /**
      * Plots.
@@ -55,12 +55,12 @@ let plotsManager = new function () {
     /**
      * Number of sampled points for the signal and window.
      */
-    let signalNumPoints = 1000;
+    let signalNumPoints = 1200;
 
     /**
      * Number of sampled points for the Gabor transform.
      */
-    let gaborNumPoints = 1000;
+    let gaborNumPoints = 1200;
 
     /**
      * Time sampling rate.
@@ -88,11 +88,11 @@ let plotsManager = new function () {
         //Signal setup
         let signal;
         try {
-            signal = new musicSignal(fromStringToMusic(musicSheet),
+            signal = new musicSignal(musicManager.fromStringToMusic(musicSheet),
                 { N: signalNumPoints, timeScale: timeScale });
         } catch (error) {
             console.log(error);
-            signal = newMusicSignal(fromStringToMusic("a/1:1"),
+            signal = new musicSignal(musicManager.fromStringToMusic("[a/1:1]"),
                 { N: signalNumPoints, timeScale: timeScale });
         }
 
@@ -101,6 +101,16 @@ let plotsManager = new function () {
             { N: signalNumPoints, timeScale: timeScale });
         const g2 = new gaussianWindow(sigma2,
             { N: signalNumPoints, timeScale: timeScale });
+
+        const signalTransform = new transformManager(
+            signal, g1,
+            {
+                N: gaborNumPoints,
+                padding: padding,
+                timeRate: timeRate,
+                freqRate: freqRate
+            }
+        );
 
         // Signal, window and Gabor transform plots.
         plots = [
@@ -118,16 +128,18 @@ let plotsManager = new function () {
                     window2: g2
                 }),
             // Gabor transform plot
-            new gaborPlot(3, signal, g1, {
-                transformOptions: {
-                    N: gaborNumPoints,
-                    padding: padding,
-                },
-                useTwoWindows: useTwoWindows,
-                window2: g2,
-                timeRate: timeRate,
-                freqRate: freqRate
-            }),
+            new gaborPlot(3, signalTransform,
+                {
+                    useTwoWindows: useTwoWindows,
+                    window2: g2,
+                    timeRate: timeRate,
+                    freqRate: freqRate
+                }
+            ),
+            new fourierPlot(4, signalTransform,
+                {
+                    freqRate: freqRate,
+                })
         ];
     }
 
@@ -154,6 +166,13 @@ let plotsManager = new function () {
     // On window click (get focus)
     window.onclick = (e) => {
         e.target.focus();
+        if (e.target.id.localeCompare("canvas-4") == 0) {
+            canvases[2].classList.add('focused');
+            canvases[3].classList.add('focused');
+        } else {
+            canvases[2].classList.remove('focused');
+            canvases[3].classList.remove('focused');
+        }
     }
 
     function setLoadingStyle(isLoading, opacity = 0) {
@@ -207,7 +226,20 @@ let plotsManager = new function () {
 
     // Sets listeners for textarea
     textarea.onchange = () => {
-        musicSheet = textarea.value;
+        const textareaValue = textarea.value.toLowerCase();
+        musicSheet = musicManager.getMusicSheet(textareaValue);
+
+        if (typeof musicSheet === 'undefined') {
+            musicSheet = textareaValue;
+        } else {
+            // Updates the textarea value
+            textarea.value = musicSheet;
+
+            // Updates the textarea height
+            textarea.style.height = "auto";
+            textarea.style.height = textarea.scrollHeight - 20 + "px";
+        }
+
         changePlot();
     }
 

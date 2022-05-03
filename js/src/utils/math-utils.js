@@ -132,7 +132,7 @@ let gaussianWindow = function (sigma, options = []) {
         if (typeof N === 'undefined') {
             return sampledWindow;
         } else {
-            return sample(N);
+            return (N == sampledWindow.length) ? sampledWindow : sample(N);
         }
     }
 
@@ -300,7 +300,7 @@ let musicSignal = function (inputTracks, options = []) {
         if (typeof N === 'undefined') {
             return sampledSignal;
         } else {
-            return sample(N);
+            return (N == sampledSignal.length) ? sampledSignal : sample(N)
         }
     }
 
@@ -355,7 +355,7 @@ let musicSignal = function (inputTracks, options = []) {
      * @returns The frequency of the note (in Hz).
      */
     const noteToFreq = (note, octave) => {
-        return baseFreq * Math.pow(2, octave + 1 / 12 * notesMap.get(note));
+        return baseFreq * Math.pow(2, octave + 1 / 12 * musicManager.getNote(note));
     }
 
     /**
@@ -389,7 +389,7 @@ let musicSignal = function (inputTracks, options = []) {
  * @param {*} options 
  * @returns Public APIs.
  */
-let gaborTransformStructure = function (inputSignal, inputWindowFunction, options = []) {
+let transformManager = function (inputSignal, inputWindowFunction, options = []) {
 
     /**
      * Public methods.
@@ -470,41 +470,52 @@ let gaborTransformStructure = function (inputSignal, inputWindowFunction, option
     }
 
     /**
+     * Get the signal to be transformed.
+     * @returns The signal.
+     */
+    publicAPIs.getSignal = function () {
+        return signal;
+    }
+
+    /**
      * Updates the Gabor transform structure.
      * @param {*} inputSignal Signal function f(x).
      * @param {*} inputWindowFunction Window function g(x).
      * @param {*} options 
      */
     publicAPIs.update = function (inputSignal, inputWindowFunction, options) {
+        // Updates the signal and teh window
         signal = inputSignal;
         windowFunction = inputWindowFunction;
 
+        // Updates the duration and range of the singnal
         signalDuration = signal.getDuration();
         range = signal.getRange();
-        // rangeDiff = 2 * range.max * (1 + padding);
         rangeDiff = range.max - range.min;
+
+        // Updates the zoom level
         padding = toDefaultIfUndefined(options.padding, .1) * rangeDiff;
 
-        numPoints = toDefaultIfUndefined(options.N, 400);
+        // Updates the number of sampled points
+        numPoints = toDefaultIfUndefined(options.N, 1200);
         timeRate = options.timeRate;
         freqRate = options.freqRate;
         dt = signalDuration / numPoints;
 
-        if (typeof options.N === 'undefined') {
-            sampledSignal = signal.getSampled();
-            sampledWindow = windowFunction.getSampled();
-        } else {
-            sampledSignal = signal.getSampled(numPoints);
-            sampledWindow = windowFunction.getSampled(numPoints);
-        }
+        // Updates the sampled signal
+        sampledSignal = signal.getSampled(numPoints);
+        sampledWindow = windowFunction.getSampled(numPoints);
+
+        console.log("!");
 
         for (let i = 0; i < numPoints; i++) {
             sampledCoefficient[i] = [];
             for (let j = 0; j < numPoints; j += freqRate) {
                 const phi = - 2 * Math.PI * (i / numPoints * signalDuration)
-                    // * (- range.max * (1 + padding) + omega * rangeDiff));
                     * (range.min - padding + (j / numPoints) * (rangeDiff + padding * 2));
                 sampledCoefficient[i][j / freqRate] = new ComplexNumber(Math.cos(phi), Math.sin(phi));
+
+                if (i == 0) console.log((range.min - padding + (j / numPoints) * (rangeDiff + padding * 2)))
             }
         }
     }
@@ -517,7 +528,7 @@ let gaborTransformStructure = function (inputSignal, inputWindowFunction, option
      * @param {*} omega Frequency coordinate omega in Vgf(x, omega).
      * @returns Vgf(x, omega).
      */
-    publicAPIs.valueAt = (x, omega) => {
+    publicAPIs.gaborAt = (x, omega) => {
         let vgf = new ComplexNumber(0, 0);
 
         for (let t = 0; t < numPoints; t++) {
@@ -533,6 +544,21 @@ let gaborTransformStructure = function (inputSignal, inputWindowFunction, option
         }
 
         return vgf;
+    }
+
+    publicAPIs.fourierAt = (omega) => {
+        let ff = new ComplexNumber(0, 0);
+
+        for (let t = 0; t < numPoints; t++) {
+            // Coefficient e^(-2 * PI * t * omega)
+            const c = sampledCoefficient[t][omega];
+            // f(t)
+            const f = sampledSignal[t];
+
+            ff.add(c.scale(f * dt));
+        }
+
+        return ff;
     }
 
     return publicAPIs;

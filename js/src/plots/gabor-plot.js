@@ -1,12 +1,11 @@
 /**
- * Plot of the gabor transform.
+ * Plot of the Gabor transform.
  * @param {Number} idNumber Id of the transform plot.
- * @param {*} inputSignal Signal function f(x).
- * @param {*} inputWindowFunction Window function g(x).
+ * @param {*} inputGaborTransform Transform manager.
  * @param {*} options Input options.
  * @returns Public APIs.
  */
-let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = []) {
+let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
 
     /**
      * Public methods.
@@ -77,19 +76,13 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
      * @param {*} inputWindowFunction Window function g(x).
      * @param {*} options 
      */
-    publicAPIs.updatePlot = (inputSignal, inputWindowFunction, options) => {
+    publicAPIs.updatePlot = (inputGaborTransform, options) => {
         // Sets the time and frequency sample rate
         timeRate = toDefaultIfUndefined(options.timeRate, 8);
         freqRate = toDefaultIfUndefined(options.freqRate, 12);
 
-        options.transformOptions["timeRate"] = timeRate;
-        options.transformOptions["freqRate"] = freqRate;
-
         // Sets the Gabor transform
-        gaborTransform = new gaborTransformStructure(
-            inputSignal, inputWindowFunction,
-            options.transformOptions
-        );
+        gaborTransform = inputGaborTransform;
 
         // Sets the Gabor transform if the second window is present
         useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
@@ -97,18 +90,19 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
             if (typeof options.window2 === 'undefined') {
                 useTwoWindows = false;
             } else {
-                gaborTransform2 = new gaborTransformStructure(
-                    inputSignal, options.window2, options.transformOptions
+                gaborTransform2 = new transformManager(
+                    gaborTransform.getSignal(), options.window2,
+                    options
                 );
             }
         }
 
-        // Get number of po
+        // Get number of points
         numPoints = gaborTransform.getNumPoints();
     }
 
     // Creates the plot
-    publicAPIs.updatePlot(inputSignal, inputWindowFunction, options);
+    publicAPIs.updatePlot(inputGaborTransform, options);
 
     /*_______________________________________
     |   Canvas
@@ -140,13 +134,13 @@ let gaborPlot = function (idNumber, inputSignal, inputWindowFunction, options = 
         for (let i = 0; i < numPoints; i += timeRate) {
             for (let j = 0; j < numPoints; j += freqRate) {
                 // Gabor transform
-                const vgf = gaborTransform.valueAt(i, j / freqRate);
+                const vgf = gaborTransform.gaborAt(i, j / freqRate);
                 // Spectrogram
                 let spectrogram = vgf.abs();
 
                 // Adds second Gabor transform if present
                 if (useTwoWindows) {
-                    spectrogram *= gaborTransform2.valueAt(i, j / freqRate).abs();
+                    spectrogram *= gaborTransform2.gaborAt(i, j / freqRate).abs();
                 }
 
                 // Position of the cell
