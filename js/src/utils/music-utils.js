@@ -10,6 +10,40 @@ const musicManager = new function () {
     let publicAPIs = {};
 
     /**
+     * Time scale.
+     */
+    let timeScale = 1;
+
+    /**
+     * Volume.
+     */
+    let volume = 10;
+
+    /**
+     * Get the time scale factor.
+     * @returns The time scale factor.
+     */
+    publicAPIs.getTimeScale = () => {
+        return timeScale;
+    }
+
+    /**
+     * Set the time scale
+     * @param {Number} inputTimeScale Time scale.
+     */
+    publicAPIs.setTimeScale = (inputTimeScale) => {
+        timeScale = inputTimeScale;
+    }
+
+    /**
+     * Set the music volume multiplier.
+     * @param {Number} inputVolume Volume multiplier.
+     */
+    publicAPIs.setVolume = (inputVolume) => {
+        volume = inputVolume;
+    }
+
+    /**
      * Map of notes and their corresponding number value.
      */
     const notesMap = new Map([
@@ -38,6 +72,10 @@ const musicManager = new function () {
         [
             "ode to joy",
             "[e/1 e/1 f/1 g/1 g/1 f/1 e/1 d/1 c/1 c/1 d/1 e/1 d/1.5 c/.5 c/2]"
+        ],
+        [
+            "bach toccata",
+            "[a2/2 g1/2 a2/3 _/2 g1/1 f1/1 e1/1 d1/1 c#1/3 _/2 d1/8 _/8 a1/2 g/2 a1/3 _/2 e/2 f/2 c#/2 d/8]"
         ]
     ]);
 
@@ -96,7 +134,7 @@ const musicManager = new function () {
                     note: noteName,
                     oct: noteOctave,
                     d: noteDuration,
-                    vol: noteVolume
+                    vol: noteVolume * volume
                 });
             })
         });

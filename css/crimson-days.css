@@ -10,11 +10,11 @@
         - Scrollbar
     2. Components
         2.1 Body
-        2.2 Formulas
-        2.3 Canvas
-        2.4 Loaders
-        2.5 Input box
-        2.6 Textarea
+        2.2 Canvas
+        2.3 Loaders
+        2.4 Input box
+        2.5 Textarea
+        2.6 Buttons
         
 ===================================== */
 
@@ -107,7 +107,7 @@
     width: 100%;
     display: grid;
     gap: 10px;
-    grid-template-columns: minmax(150px, 1fr) 2fr 1fr;
+    grid-template-columns: minmax(150px, 1fr) 1.5fr 1fr;
 }
 
 .page-content {
@@ -122,11 +122,11 @@
 
 @media (max-width: 1000px) {
     .page-container {
-        grid-template-columns: minmax(150px, 1fr) 4fr 1fr;
+        grid-template-columns: minmax(150px, 1fr) 6fr 1fr;
     }
 }
 
-@media (max-width: 768px), (orientation: portrait), (hover: none) {
+@media (max-width: 800px), (orientation: portrait), (hover: none) {
     .page-container {
         grid-template-columns: none;
     }
@@ -324,7 +324,7 @@ div.loading-container {
     place-items: center;
 }
 
-/* -- 2.3 Input box -- */
+/* -- 2.4 Input box -- */
 
 div.input-container {
     display: grid;
@@ -361,6 +361,28 @@ input.input-box:hover {
     border-color: #d43417;
 }
 
+input.input-box.window {
+    width: 50px !important;
+}
+
+input.input-box.second.window:active {
+    border-color: #0C95C7 !important;
+}
+
+input.input-box.second.window:hover {
+    border-color: #22a2d1 !important;
+}
+
+input.input-box.second.window::-moz-selection {
+    color: #eeeeee;
+    background: #0C95C7 !important;
+}
+
+input.input-box.second.window::selection {
+    color: #eeeeee;
+    background: #0C95C7 !important;
+}
+
 /* Hides arrows of input box */
 
 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
@@ -372,7 +394,7 @@ input[type=number] {
     -moz-appearance: textfield;
 }
 
-/* -- 2.3 Textarea -- */
+/* -- 2.5 Textarea -- */
 
 textarea.input-area {
     resize: none;
@@ -386,4 +408,38 @@ textarea.input-area {
     font-size: 9pt;
     caret-color: #8d8d8d;
     transition: all .3 ease-in-out;
+}
+
+/* -- 2.6 Buttons -- */
+
+.material-symbols-outlined, .material-symbols-outlined.button {
+    position: relative;
+    vertical-align: middle;
+    font-size: 8pt;
+    user-select: none;
+    transform: translate(0px, -1px);
+}
+
+.material-symbols-outlined, .material-symbols-outlined.refresh {
+    cursor: pointer;
+    transform: translate(0px, 1px) !important;
+}
+
+.material-symbols-outlined.button {
+    font-size: 12pt;
+    cursor: pointer;
+    transition: all .1 ease-in-out !important;
+}
+
+.material-symbols-outlined.button.first-window {
+    color: #B01A00;
+}
+
+.material-symbols-outlined.button.second-window {
+    color: #0C95C7;
+}
+
+.material-symbols-outlined.button.fourier {
+    color: var(--primary);
+    opacity: 0.2;
 }

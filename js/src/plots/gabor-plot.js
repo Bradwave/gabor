@@ -84,6 +84,9 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
         // Sets the Gabor transform
         gaborTransform = inputGaborTransform;
 
+        // Get number of points
+        numPoints = gaborTransform.getNumPoints();
+
         // Sets the Gabor transform if the second window is present
         useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
         if (useTwoWindows) {
@@ -92,13 +95,15 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
             } else {
                 gaborTransform2 = new transformManager(
                     gaborTransform.getSignal(), options.window2,
-                    options
+                    {
+                        N: numPoints,
+                        padding: gaborTransform.getPadding(),
+                        timeRate: timeRate,
+                        freqRate: freqRate
+                    }
                 );
             }
         }
-
-        // Get number of points
-        numPoints = gaborTransform.getNumPoints();
     }
 
     // Creates the plot
@@ -164,6 +169,18 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
                 ctx.closePath();
             }
         }
+    }
+
+    /**
+     * Clears the plot.
+     */
+    publicAPIs.clearPlot = () => {
+        ctx.fillStyle = "#ffffff";
+
+        ctx.beginPath();
+        ctx.rect(0, 0, width, height);
+        ctx.fill();
+        ctx.closePath();
     }
 
     publicAPIs.resizeCanvas();

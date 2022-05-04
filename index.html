@@ -14,7 +14,8 @@
     <link rel="icon" type="image/png" href="imgs/icon.png">
     <link rel="stylesheet" href="css/crimson-days.css">
 
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://fonts.sandbox.google.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,600,1,0" />
 </head>
 
 <body>
@@ -29,58 +30,83 @@
 
     <div class="page-container" id="page-container" style="visibility: hidden; opacity: 0;">
         <nav class="page-sidebar">
-            
+
         </nav>
         <main class="page-content" id="page-content">
 
             <div style="display: grid; place-items: center; margin-top: 10px;">
-                <span class="label">spectrogram of a signal</span>
+                <div>
+                    <span class="label">spectrogram of a signal</span>
+                    <span id="refresh-all" class="material-symbols-outlined refresh" style="margin-left: -2px">
+                        refresh
+                    </span>
+                </div>
             </div>
 
             <div style="height: 20pt;"></div>
 
             <div class="plot-container" id="plot-1">
-                <canvas name = "plot" class="plot main" id="canvas-1" tabindex="1" style="height: 75px;"></canvas>
-                <div name = "plot-loader" id="loader-1" class="plot loader"></div>
+                <canvas name="plot" class="plot main" id="canvas-1" tabindex="1" style="height: 75px;"></canvas>
+                <div name="plot-loader" id="loader-1" class="plot loader"></div>
             </div>
 
             <div style="height: 15pt;"></div>
 
             <div class="plot-container" id="plot-2">
-                <canvas name = "plot" class="plot main" id="canvas-2" tabindex="3" style="height: 75px;"></canvas>
-                <div name = "plot-loader" id="loader-2" class="plot loader"></div>
+                <canvas name="plot" class="plot main" id="canvas-2" tabindex="3" style="height: 75px;"></canvas>
+                <div name="plot-loader" id="loader-2" class="plot loader"></div>
             </div>
 
             <div style="height: 30pt;"></div>
 
             <div class="plot-container" id="plot-3">
-                <canvas name = "plot" class="plot" id="canvas-3" tabindex="4" style="height: 200px;"></canvas>
-                <canvas name = "plot" class="plot stacked" id="canvas-4" tabindex="5" style="height: 200px;"></canvas>
-                <div name = "plot-loader" id="loader-3" class="plot loader"></div>
+                <canvas name="plot" class="plot" id="canvas-3" tabindex="4" style="height: 200px;"></canvas>
+                <canvas name="plot" class="plot stacked" id="canvas-4" tabindex="5"
+                    style="height: 200px; opacity: 0;"></canvas>
+                <div name="plot-loader" id="loader-3" class="plot loader"></div>
             </div>
 
             <div style="height: 20pt;"></div>
 
             <div class="input-container" id="input-container-1" style="margin-bottom: 10px;">
                 <div>
-                    <textarea class="input-area" id="music-sheet" cols="55"
-                        rows="1">[a#/1 a1/2:2 a2/1.5:0.5]; [f1/2:1.5 _/1.5 g&1/0.5]</textarea>
+                    <textarea class="input-area" id="music-sheet" cols="55" rows="1"
+                        spellcheck="false">[a#/1 a1/2:2 a2/1.5:0.5]; [f1/2:1.5 _/1.5 g&1/0.5]</textarea>
                 </div>
                 <div style="margin-top: 10px;">
                     <div>
-                        signal | N:
+                        signal<span style="visibility: hidden;">_</span>
+                        <span class="material-symbols-outlined">chevron_right</span>
+                        N:
                         <input id="signal-num-points" class="input-box" type="text" maxlength="5" value="1200">
-                        time-scale:
+                        t-scale:
                         <input id="time-scale" class="input-box" type="text" maxlength="3" value="20">
+                        vol:
+                        <input id="volume" class="input-box" type="text" maxlength="3" value="1">
                     </div>
-                    <div style="margin-top: 5px;">
-                        window | sigma-1:
-                        <input id="sigma-1" class="input-box" type="text" maxlength="5" value="0.5">
+                    <div style="margin-top: 4px;">
+                        window<span style="visibility: hidden;">_</span>
+                        <span class="material-symbols-outlined">chevron_right</span>
+                        <span name="window-button" class="material-symbols-outlined button window" id="window-1"
+                            style="transform: translate(-3px, -1px);">
+                            sync_alt
+                        </span>
+                        sigma-1:
+                        <input id="sigma-1" class="input-box window" type="text" maxlength="6" value="0.5">
+                        <span name="window-button" class="material-symbols-outlined button second-window"
+                            id="window-2" style="opacity: 0.5;">
+                            sync_alt
+                        </span>
                         sigma-2:
-                        <input id="sigma-2" class="input-box" type="text" maxlength="5" value="no">
+                        <input id="sigma-2" class="input-box second window" type="text" maxlength="6" value="no">
+                        <span id="reset-window" class="material-symbols-outlined button">
+                            refresh
+                        </span>
                     </div>
-                    <div style="margin-top: 5px;">
-                        gabor&nbsp | N:
+                    <div style="margin-top: 4px;">
+                        gabor<span style="visibility: hidden;">__</span>
+                        <span class="material-symbols-outlined">chevron_right</span>
+                        N:
                         <input id="gabor-num-points" class="input-box" type="text" maxlength="5" value="1200">
                         t-rate:
                         <input id="t-rate" class="input-box" type="text" maxlength="3" value="5">
@@ -89,12 +115,32 @@
                         zoom:
                         <input id="zoom" class="input-box" type="text" maxlength="4" value=".2">
                     </div>
+                    <div style="margin-bottom: 4px;">
+                        fourier
+                        <span class="material-symbols-outlined">
+                            chevron_right
+                        </span>
+                        <span id="fourier-movable" class="material-symbols-outlined button fourier"
+                            style="transform: translate(-3px, -1px);">
+                            sync_alt
+                        </span>
+                        <input id="fourier-visible" class="input-box" type="text" maxlength="3" value="no">
+                        f-rate:
+                        <input id="fourier-f-rate" class="input-box" type="text" maxlength="3" value="15">
+                        pow:
+                        <input id="fourier-power" class="input-box" type="text" maxlength="4" value="4">
+                        scale:
+                        <input id="fourier-scale" class="input-box" type="text" maxlength=".1" value="0.1">
+                        <span id="reset-fourier" class="material-symbols-outlined button">
+                            refresh
+                        </span>
+                    </div>
                 </div>
             </div>
 
         </main>
         <nav class="page-sidebar">
-            
+
         </nav>
 
         <script src="js/src/page-controller.js"></script>

@@ -13,6 +13,6 @@ window.onload = () => {
     // Get the device dpi
     dpi = window.devicePixelRatio;
 
-    // Init plot
+    plotsManager.createPlots();
     plotsManager.update();
 }

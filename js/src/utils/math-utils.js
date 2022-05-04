@@ -116,14 +116,6 @@ let gaussianWindow = function (sigma, options = []) {
     }
 
     /**
-     * Get the time scale factor of the window.
-     * @returns The time scale factor.
-     */
-    publicAPIs.getTimeScale = function () {
-        return timeScale;
-    }
-
-    /**
      * Get the sampled window.
      * @param {Number} N Number of points to be sampled.
      * @returns The sampled window.
@@ -165,7 +157,7 @@ let gaussianWindow = function (sigma, options = []) {
         c2 = - 1 / (2 * Math.pow(sigma, 2));
         mu = toDefaultIfUndefined(options.mu, 0);
 
-        timeScale = toDefaultIfUndefined(options.timeScale, 1);
+        timeScale = toDefaultIfUndefined(musicManager.getTimeScale(), 1);
         sampledWindow = sample(toDefaultIfUndefined(options.N, 1000));
     }
 
@@ -242,14 +234,6 @@ let musicSignal = function (inputTracks, options = []) {
         });
 
         return tracksLength;
-    }
-
-    /**
-     * Get the time scale of the signal.
-     * @returns Time scale.
-     */
-    publicAPIs.getTimeScale = function () {
-        return timeScale;
     }
 
     /**
@@ -367,7 +351,7 @@ let musicSignal = function (inputTracks, options = []) {
 
         baseFreq = toDefaultIfUndefined(options.baseFreq, 1);
         linearSpeed = toDefaultIfUndefined(options.linearSpeed, 1);
-        timeScale = toDefaultIfUndefined(options.timeScale, 1);
+        timeScale = toDefaultIfUndefined(musicManager.getTimeScale(), 1);
 
         tracksLength = getTracksLength();
         duration = publicAPIs.getDuration();
@@ -470,11 +454,43 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
     }
 
     /**
+     * Get the frequency rate.
+     * @returns THe frequency rate.
+     */
+    publicAPIs.getFreqRate = function () {
+        return freqRate;
+    }
+
+    /**
      * Get the signal to be transformed.
      * @returns The signal.
      */
     publicAPIs.getSignal = function () {
         return signal;
+    }
+
+    /**
+     * Get the padding.
+     * @returns The padding.
+     */
+    publicAPIs.getPadding = function () {
+        return padding;
+    }
+
+    /**
+     * Updates the pre-computed coefficients.
+     * @param {Number} inputFreqRate Frequency rate.
+     */
+    publicAPIs.updateCoefficients = (inputFreqRate) => {
+        freqRate = inputFreqRate;
+        for (let i = 0; i < numPoints; i++) {
+            sampledCoefficient[i] = [];
+            for (let j = 0; j < numPoints; j += freqRate) {
+                const phi = - 2 * Math.PI * (i / numPoints * signalDuration)
+                    * (range.min - padding + (j / numPoints) * (rangeDiff + padding * 2));
+                sampledCoefficient[i][j / freqRate] = new ComplexNumber(Math.cos(phi), Math.sin(phi));
+            }
+        }
     }
 
     /**
@@ -499,27 +515,17 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
         // Updates the number of sampled points
         numPoints = toDefaultIfUndefined(options.N, 1200);
         timeRate = options.timeRate;
-        freqRate = options.freqRate;
         dt = signalDuration / numPoints;
 
         // Updates the sampled signal
         sampledSignal = signal.getSampled(numPoints);
         sampledWindow = windowFunction.getSampled(numPoints);
 
-        console.log("!");
-
-        for (let i = 0; i < numPoints; i++) {
-            sampledCoefficient[i] = [];
-            for (let j = 0; j < numPoints; j += freqRate) {
-                const phi = - 2 * Math.PI * (i / numPoints * signalDuration)
-                    * (range.min - padding + (j / numPoints) * (rangeDiff + padding * 2));
-                sampledCoefficient[i][j / freqRate] = new ComplexNumber(Math.cos(phi), Math.sin(phi));
-
-                if (i == 0) console.log((range.min - padding + (j / numPoints) * (rangeDiff + padding * 2)))
-            }
-        }
+        // Updates the coefficient
+        publicAPIs.updateCoefficients(options.freqRate);
     }
 
+    // Creates the transform manager
     publicAPIs.update(inputSignal, inputWindowFunction, options);
 
     /**

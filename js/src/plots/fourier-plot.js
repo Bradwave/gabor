@@ -51,6 +51,63 @@ let fourierPlot = function (idNumber, inputFourierTransform, options = []) {
     let freqRate;
 
     /**
+     * Percentage of the canvas width used.
+     */
+    let widthScale;
+
+    /**
+     * Exponent used to scale the spectrogram. 
+     */
+    let power;
+
+    /**
+     * Position of the plot in the canvas.
+     */
+    let fourierPosition = 0;
+
+    /**
+     * True if the plot is visible, false otherwise.
+     */
+    let visible = false;
+
+    /**
+     * Ture if the transform is movable, false otherwise.
+     */
+    let movable = false;
+
+    /**
+     * Resets the Fourier transform position.
+     */
+    publicAPIs.resetFourierPosition = () => {
+        fourierPosition = 0;
+        publicAPIs.drawPlot();
+    }
+
+    /**
+     * Set the position of the transform in the plot.
+     * @param {Number} position Position ∈ [0,1]
+     */
+    publicAPIs.setFourierPosition = (position) => {
+        fourierPosition = position;
+    }
+
+    /**
+     * Set the visibility of the plot.
+     * @param {Boolean} visibility True if visible, false otherwise.
+     */
+    publicAPIs.setVisibility = (visibility) => {
+        visible = visibility;
+    }
+
+    /**
+     * Set the movability of the transform.
+     * @param {Boolean} visibility True if movable, false otherwise.
+     */
+    publicAPIs.setMovability = (movability) => {
+        movable = movability;
+    }
+
+    /**
      * Updates the plot.
      * @param {*} inputFourierTransform Signal function f(x).
      * @param {*} options 
@@ -58,14 +115,25 @@ let fourierPlot = function (idNumber, inputFourierTransform, options = []) {
     publicAPIs.updatePlot = (inputFourierTransform, options) => {
         // Sets the frequency sample rate
         freqRate = toDefaultIfUndefined(options.freqRate, 12);
-
-        options.freqRate = freqRate;
-
+        
         // Sets the Gabor transform
         fourierTransform = inputFourierTransform;
 
+        // Sets the coefficients if the frequency rate is different
+        if (freqRate != inputFourierTransform.getFreqRate()) {
+            fourierTransform.updateCoefficients(freqRate);
+        }
+
         // Get number of points
         numPoints = fourierTransform.getNumPoints();
+
+        // Sets graphical settings
+        power = toDefaultIfUndefined(options.power, 4);
+        widthScale = toDefaultIfUndefined(options.scale, 0.1);
+
+        fourierPosition = toDefaultIfUndefined(options.position, 0);
+        visible = toDefaultIfUndefined(options.visibility, false);
+        movable = toDefaultIfUndefined(options.movability, false);
     }
 
     // Creates the plot
@@ -91,6 +159,24 @@ let fourierPlot = function (idNumber, inputFourierTransform, options = []) {
     }
 
     /**
+     * Moves the position of the Fourier plot.
+     */
+    plot.getCanvas().onmouseup = (e) => {
+        if (visible && movable) {
+            const rect = e.target.getBoundingClientRect();
+            // x position within the element
+            const x = e.clientX - rect.left;
+            // Position in the plot
+            fourierPosition = x * dpi / width;
+
+            plotsManager.setFourierPosition(fourierPosition);
+
+            // Draws plot
+            publicAPIs.drawPlot();
+        }
+    }
+
+    /**
      * Draws the plot.
      */
     publicAPIs.drawPlot = () => {
@@ -103,22 +189,34 @@ let fourierPlot = function (idNumber, inputFourierTransform, options = []) {
             // Spectrogram
             let spectrogram = ff.abs();
 
-            // Position of the cell
-            const yPos = height - Math.round(j * cellHeight)
             // Grey value of the cell
-            const alpha = Math.pow(- Math.exp(- spectrogram) + 1, 6);
+            const alpha = - Math.pow(Math.exp(- spectrogram), 1 / power) + 1;
+            // Position of the cell
+            const xPos = (fourierPosition * width) - fourierPosition * alpha * width * widthScale;
+            const yPos = height - Math.round(j * cellHeight)
 
             // Draws the cell
             ctx.beginPath();
-            ctx.fillStyle = "rgba(176, 26, 0, " + alpha + ")"; 
+            ctx.fillStyle = "rgba(176, 26, 0, " + alpha + ")";
             ctx.rect(
-                0, yPos,
-                Math.round(alpha * width * 0.1),
+                xPos, yPos,
+                Math.round(alpha * width * widthScale),
                 height - Math.round((j + freqRate) * cellHeight) - yPos
             );
             ctx.fill();
             ctx.closePath();
         }
+    }
+    /**
+     * Clears the plot.
+     */
+    publicAPIs.clearPlot = () => {
+        ctx.fillStyle = "#ffffff";
+
+        ctx.beginPath();
+        ctx.rect(0, 0, width, height);
+        ctx.fill();
+        ctx.closePath();
     }
 
     publicAPIs.resizeCanvas();

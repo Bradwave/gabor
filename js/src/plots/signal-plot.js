@@ -1,11 +1,9 @@
 /**
  * Plot of the signal function f(x).
  * @param {Number} idNumber Id of the signal plot.
- * @param {*} inputSignal Signal to be drawn.
- * @param {*} options Input options.
  * @returns Public APIs.
  */
-let signalPlot = function (idNumber, inputSignal, options = []) {
+ let signalPlot = function (idNumber) {
 
     /**
      * Public methods.
@@ -55,7 +53,10 @@ let signalPlot = function (idNumber, inputSignal, options = []) {
      * @param {*} inputSignal Signal function f(x), 
      * @param {*} options 
      */
-    publicAPIs.updatePlot = function (inputSignal, options) {
+    publicAPIs.update = function (inputSignal, options) {
+        // Resizes canvas
+        publicAPIs.resizeCanvas();
+
         // Updates the signal function
         signal = inputSignal;
 
@@ -70,20 +71,16 @@ let signalPlot = function (idNumber, inputSignal, options = []) {
 
         // Sets the scale according to the amplitude
         yScale = toDefaultIfUndefined(options.yScale, 0.4 / signal.getAmp());
+
+        // Draws the plot
+        publicAPIs.drawPlot();
     }
-
-    // Creates the plot
-    publicAPIs.updatePlot(inputSignal, options);
-
-    /*_______________________________________
-    |   HTML elements
-    */
 
     /*_______________________________________
     |   Canvas
     */
 
-    const plot = new plotStructure(idNumber);
+    const plot = new plotStructure(idNumber, { alpha: false });
     const ctx = plot.getCtx();
 
     /**
@@ -103,6 +100,8 @@ let signalPlot = function (idNumber, inputSignal, options = []) {
         // Clears the canvas
         ctx.clearRect(0, 0, width, height);
 
+        publicAPIs.clearPlot();
+
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 1.25;
 
@@ -116,8 +115,17 @@ let signalPlot = function (idNumber, inputSignal, options = []) {
         ctx.stroke();
     }
 
-    publicAPIs.resizeCanvas();
-    publicAPIs.drawPlot();
+    /**
+     * Clears the plot.
+     */
+     publicAPIs.clearPlot = () => {
+        ctx.fillStyle = "#ffffff";
+
+        ctx.beginPath();
+        ctx.rect(0, 0, width, height);
+        ctx.fill();
+        ctx.closePath();
+    }
 
     // Returns public methods
     return publicAPIs;

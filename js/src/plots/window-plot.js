@@ -1,11 +1,9 @@
 /**
  * Plot of the window function g(x).
  * @param {Number} idNumber Id of the signal plot.
- * @param {*} inputWindowFunction Signal to be drawn.
- * @param {*} options Input options.
  * @returns Public APIs.
  */
-let windowPlot = function (idNumber, inputWindowFunction, options = []) {
+let windowPlot = function (idNumber) {
 
     /**
      * Public methods.
@@ -78,14 +76,22 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
     /**
      * Window function position on the time axis.
      */
-    let windowPosition = 0.5;
+    let windowPositions = [0.5, 0.5];
+
+    publicAPIs.resetWindowPositions = () => {
+        windowPositions = [0.5, 0.5];
+        publicAPIs.drawPlot();
+    }
 
     /**
      * Updates the plot.
      * @param {*} inputWindowFunction Window function g(x).
      * @param {*} options 
      */
-    publicAPIs.updatePlot = function (inputWindowFunction, options) {
+    publicAPIs.update = function (inputWindowFunction, options) {
+        // Resizes canvas
+        publicAPIs.resizeCanvas();
+
         // Updates window function
         windowFunction = inputWindowFunction;
 
@@ -93,7 +99,7 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
         useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
         if (useTwoWindows) windowFunction2 = toDefaultIfUndefined(options.window2,
             new gaussianWindow(1,
-                { N: windowFunction.getNumPoints(), timeScale: windowFunction.getTimeScale() }
+                { N: windowFunction.getNumPoints() }
             )
         );
 
@@ -119,10 +125,10 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
 
         // Sets the scale according to the amplitude
         yScale = showSignal ? toDefaultIfUndefined(options.yScale, 0.4 / signal.getAmp()) : 0.8;
-    }
 
-    // Creates the plot
-    publicAPIs.updatePlot(inputWindowFunction, options);
+        // Draws the plot
+        publicAPIs.drawPlot();
+    }
 
     /*_______________________________________
     |   HTML elements
@@ -132,7 +138,7 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
     |   Canvas
     */
 
-    const plot = new plotStructure(idNumber);
+    const plot = new plotStructure(idNumber, { alpha: false });
     const ctx = plot.getCtx();
 
     /**
@@ -150,10 +156,15 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
      */
     plot.getCanvas().onmouseup = (e) => {
         const rect = e.target.getBoundingClientRect();
-        const x = e.clientX - rect.left; //x position within the element.
-        const y = e.clientY - rect.top;
+        // x position within the element
+        const x = e.clientX - rect.left;
+        // Position in the signal
+        const currentPosition = (x * dpi) / width;
 
-        windowPosition = (x * dpi) / width;
+        if (plotsManager.isWindowMovable(0)) windowPositions[0] = currentPosition;
+        if (plotsManager.isWindowMovable(1) && useTwoWindows) windowPositions[1] = currentPosition;
+
+        // Draws plot
         publicAPIs.drawPlot();
     }
 
@@ -176,6 +187,7 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
                     height - height * (0.5 + yScale * sampledSignal[i]));
             }
             ctx.stroke();
+            ctx.closePath();
 
             // Draws the second window if present
             if (useTwoWindows) {
@@ -185,13 +197,14 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
                 ctx.beginPath();
                 ctx.moveTo(0, height * 0.5);
                 for (let i = 1; i < numPoints; i++) {
-                    const w = sampledWindow2[numPoints + i - Math.round(windowPosition * numPoints)];
+                    const w = sampledWindow2[numPoints + i - Math.round(windowPositions[1] * numPoints)];
                     ctx.lineTo(
                         i / numPoints * width,
                         height * (0.5 - yScale * w * sampledSignal[i])
                     );
                 }
                 ctx.stroke();
+                ctx.closePath();
             }
 
             ctx.strokeStyle = "#8c1500"
@@ -200,13 +213,14 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
             ctx.beginPath();
             ctx.moveTo(0, height * 0.5);
             for (let i = 1; i < numPoints; i++) {
-                const w = sampledWindow[numPoints + i - Math.round(windowPosition * numPoints)];
+                const w = sampledWindow[numPoints + i - Math.round(windowPositions[0] * numPoints)];
                 ctx.lineTo(
                     i / numPoints * width,
                     height * (0.5 - yScale * w * sampledSignal[i])
                 );
             }
             ctx.stroke();
+            ctx.closePath();
         }
 
         // Draws the second window if present
@@ -215,16 +229,23 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
             ctx.lineWidth = 2;
 
             ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(windowPositions[1] * width, 0);
+            ctx.lineTo(windowPositions[1] * width, height);
+            ctx.stroke();
+
+            ctx.beginPath();
             ctx.setLineDash([]);
             ctx.moveTo(0, height * 0.5);
             for (let i = 1; i < numPoints; i++) {
-                const w = sampledWindow2[numPoints + i - Math.round(windowPosition * numPoints)];
+                const w = sampledWindow2[numPoints + i - Math.round(windowPositions[1] * numPoints)];
                 ctx.lineTo(
                     i / numPoints * width,
                     height * (0.5 - yScale * w)
                 );
             }
             ctx.stroke();
+            ctx.closePath();
         }
 
         // Draws the window
@@ -234,25 +255,35 @@ let windowPlot = function (idNumber, inputWindowFunction, options = []) {
 
         ctx.beginPath();
         ctx.setLineDash([5, 5]);
-        ctx.moveTo(windowPosition * width, 0);
-        ctx.lineTo(windowPosition * width, height);
+        ctx.moveTo(windowPositions[0] * width, 0);
+        ctx.lineTo(windowPositions[0] * width, height);
         ctx.stroke();
 
         ctx.beginPath();
         ctx.setLineDash([]);
         ctx.moveTo(0, height * 0.5);
         for (let i = 1; i < numPoints; i++) {
-            const w = sampledWindow[numPoints + i - Math.round(windowPosition * numPoints)];
+            const w = sampledWindow[numPoints + i - Math.round(windowPositions[0] * numPoints)];
             ctx.lineTo(
                 i / numPoints * width,
                 height * (0.5 - yScale * w)
             );
         }
         ctx.stroke();
+        ctx.closePath();
     }
 
-    publicAPIs.resizeCanvas();
-    publicAPIs.drawPlot();
+    /**
+     * Clears the plot.
+     */
+    publicAPIs.clearPlot = () => {
+        ctx.fillStyle = "#ffffff";
+
+        ctx.beginPath();
+        ctx.rect(0, 0, width, height);
+        ctx.fill();
+        ctx.closePath();
+    }
 
     // Returns public methods
     return publicAPIs;
