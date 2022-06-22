@@ -50,9 +50,14 @@ const plotsManager = new function () {
     const resetFourierButton = document.getElementById("reset-fourier");
 
     /**
+     * Reset Fourier transform position button.
+     */
+    const synthesisButton = document.getElementById("synthesize");
+
+    /**
      * Plots.
      */
-    let plots;
+    let plots = new Map();
 
     /**
      * True if the window is movable, false otherwise.
@@ -68,6 +73,11 @@ const plotsManager = new function () {
      * Sigma of the second window.
      */
     let sigma2 = 1;
+
+    /**
+     * Sigma of the synthesis function
+     */
+    let sigma3 = 0.5;
 
     /**
      * True if two windows are used, false otherwise.
@@ -88,11 +98,6 @@ const plotsManager = new function () {
      * Number of sampled points for the signal and window.
      */
     let signalNumPoints = 1200;
-
-    /**
-     * Number of sampled points for the Gabor transform.
-     */
-    let gaborNumPoints = 1200;
 
     /**
      * Time sampling rate.
@@ -129,6 +134,9 @@ const plotsManager = new function () {
      */
     let fourierScale = 0.1;
 
+    /**
+     * Fourier frequency sample rate.
+     */
     let fourierFreqRate = 15;
 
     /**
@@ -141,14 +149,21 @@ const plotsManager = new function () {
      */
     let musicSheet = "[a#/1 a1/2:2 a2/1.5:0.5]; [f1/2:1.5 _/1.5 g&1/0.5]";
 
+    let transformController;
+
     // Creates the plots.
     publicAPIs.createPlots = function () {
-        plots = [
-            // Signal plot
-            new signalPlot(1),
-            // Window plot
-            new windowPlot(2),
-        ];
+        // Window plot
+        plots.set(
+            'window',
+            new windowPlot("window")
+        );
+
+        // Window plot
+        plots.set(
+            'synthesis',
+            new synthesisPlot("synthesis")
+        );
     }
 
     /**
@@ -163,57 +178,72 @@ const plotsManager = new function () {
         //Signal setup
         let signal;
         try {
-            signal = new musicSignal(musicManager.fromStringToMusic(musicSheet),
+            signal = new musicSignal(
+                musicManager.fromStringToMusic(musicSheet),
                 { N: signalNumPoints });
         } catch (error) {
             console.log(error);
-            signal = new musicSignal(musicManager.fromStringToMusic("[a/1:1]"),
+            signal = new musicSignal(
+                musicManager.fromStringToMusic("[a/1:1]"),
                 { N: signalNumPoints });
         }
 
         // Windows setup
         const g1 = new gaussianWindow(sigma1,
-            { N: signalNumPoints });
+            {
+                N: signalNumPoints,
+                L: signal.getDuration()
+            }
+        );
         const g2 = new gaussianWindow(sigma2,
-            { N: signalNumPoints });
+            {
+                N: signalNumPoints,
+                L: signal.getDuration()
+            }
+        );
+        const g3 = new gaussianWindow(sigma3,
+            {
+                N: signalNumPoints,
+                L: signal.getDuration()
+            }
+        );
 
-        const signalTransform = new transformManager(
+        transformController = new transformManager(
             signal, g1,
             {
-                N: gaborNumPoints,
-                padding: padding,
+                N: signalNumPoints,
+                window2: g2,
+                window3: g3,
                 timeRate: timeRate,
-                freqRate: freqRate
+                freqRate: freqRate,
+                padding: padding,
+                useTwoWindows: useTwoWindows
             }
         );
 
         // Signal, window and Gabor transform plots.
 
-        // Signal plot
-        plots[0].update(signal,
-            {
-                N: signalNumPoints
-            });
         // Window plot
-        plots[1].update(g1,
+        plots.get('window').update(g1,
             {
                 signal: signal,
                 N: signalNumPoints,
                 useTwoWindows: useTwoWindows,
                 window2: g2
-            });
+            }
+        );
 
         // Gabor transform plot
-        plots[2] = new gaborPlot(3, signalTransform,
+        plots.set('gabor', new gaborPlot('gabor', transformController,
             {
                 useTwoWindows: useTwoWindows,
-                window2: g2,
                 timeRate: timeRate,
                 freqRate: freqRate
             }
-        );
+        ));
+
         // Fourier plot
-        plots[3] = new fourierPlot(4, signalTransform,
+        plots.set('fourier', new fourierPlot('fourier', transformController,
             {
                 freqRate: fourierFreqRate,
                 power: fourierPower,
@@ -221,7 +251,11 @@ const plotsManager = new function () {
                 visibility: fourierVisible,
                 movability: fourierMovable,
                 position: fourierPosition,
-            });
+            }
+        ));
+
+        // Synthesis
+        plots.get('synthesis').update([0]);
     }
 
     // On window resize
@@ -249,12 +283,12 @@ const plotsManager = new function () {
     // On window click (get focus)
     window.onclick = (e) => {
         e.target.focus();
-        if (e.target.id.localeCompare("canvas-4") == 0) {
+        if (e.target.id.localeCompare("canvas-fourier") == 0) {
+            canvases[1].classList.add('focused');
             canvases[2].classList.add('focused');
-            canvases[3].classList.add('focused');
         } else {
+            canvases[1].classList.remove('focused');
             canvases[2].classList.remove('focused');
-            canvases[3].classList.remove('focused');
         }
     }
 
@@ -262,7 +296,7 @@ const plotsManager = new function () {
         if (isLoading) {
             canvases.forEach((canvas, i) => {
                 // Hides the canvases
-                canvas.style.opacity = (i != 3) ? opacity : (fourierVisible ? 0.2 : 0);
+                canvas.style.opacity = (i != 2) ? opacity : (fourierVisible ? 0.2 : 0);
                 canvas.style.visibility = "hidden";
             });
 
@@ -275,7 +309,7 @@ const plotsManager = new function () {
         } else {
             canvases.forEach((canvas, i) => {
                 // Displays the canvases
-                canvas.style.opacity = (i != 3) ? 1 : (fourierVisible ? 1 : 0);
+                canvas.style.opacity = (i != 2) ? 1 : (fourierVisible ? 1 : 0);
                 canvas.style.visibility = "visible";
             });
 
@@ -336,13 +370,14 @@ const plotsManager = new function () {
     }
 
     /**
-     * Ids of input boxes for the ring plot.
+     * Ids of input boxes for the plots.
      */
     let inputIds = [
         'signal-num-points', 'time-scale', 'volume',
         'sigma-1', 'sigma-2',
-        'gabor-num-points', 't-rate', 'f-rate', 'zoom',
-        'fourier-f-rate', 'fourier-power', 'fourier-scale'
+        't-rate', 'f-rate', 'zoom',
+        'fourier-f-rate', 'fourier-power', 'fourier-scale',
+        'sigma-3'
     ];
 
     /**
@@ -386,7 +421,6 @@ const plotsManager = new function () {
         }
 
         // Gabor
-        gaborNumPoints = constrain(getInputNumber(plotInputs, 'gabor-num-points'), 0, Infinity);
         timeRate = constrain(getInputNumber(plotInputs, 't-rate'), 0, Infinity);
         freqRate = constrain(getInputNumber(plotInputs, 'f-rate'), 0, Infinity);
         padding = getInputNumber(plotInputs, 'zoom');
@@ -395,6 +429,9 @@ const plotsManager = new function () {
         fourierScale = constrain(getInputNumber(plotInputs, 'fourier-scale'), 0, 1);
         fourierPower = getInputNumber(plotInputs, 'fourier-power');
         fourierFreqRate = constrain(getInputNumber(plotInputs, 'fourier-f-rate', 0, Infinity));
+
+        // Synthesis
+        sigma3 = getInputNumber(plotInputs, 'sigma-3');
     }
 
     /**
@@ -444,7 +481,7 @@ const plotsManager = new function () {
 
     // Listeners for the windows positions reset button
     resetWindowsButton.onclick = () => {
-        plots[1].resetWindowPositions();
+        plots.get("window").resetWindowPositions();
     }
 
     /** 
@@ -476,9 +513,9 @@ const plotsManager = new function () {
         fourierVisible = visible;
         fourierMovable = movable;
 
-        canvases[3].style.opacity = visible ? 1 : 0;
-        plots[3].setVisibility(visible);
-        plots[3].setMovability(movable);
+        canvases[2].style.opacity = visible ? 1 : 0;
+        plots.get("fourier").setVisibility(visible);
+        plots.get("fourier").setMovability(movable);
 
         fourierMoveButton.style.color = visible ? "#B01A00" : "var(--primary)";
         fourierMoveButton.style.opacity = visible ? (movable ? 1 : 0.5) : (movable ? 0.5 : 0.2);
@@ -490,9 +527,9 @@ const plotsManager = new function () {
     }
 
     resetFourierButton.onclick = () => {
-        plots[3].resetFourierPosition();
+        plots.get("fourier").resetFourierPosition();
     }
-    
+
     /**
      * Set the position of the transform transform in the plot.
      * @param {Number} position THe position ∈ [0,1].
@@ -501,10 +538,20 @@ const plotsManager = new function () {
         fourierPosition = position;
     }
 
+    synthesisButton.onclick = () => {
+        let synthesisedSignal = transformController.synthesizeSignal();
+        plots.get('synthesis').update(
+            synthesisedSignal,
+            {
+                N: signalNumPoints
+            }
+        );
+    }
+
     refreshButton.onclick = () => {
         changePlot();
     }
-    
+
     /**
      * Converts the input value to float and sets the input box value.
      * @param {*} id Id of the input box. 

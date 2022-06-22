@@ -31,9 +31,19 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
     */
 
     /**
-     * Number of sampled points in the Gabor transform.
+     * Number of sampled time points in the Gabor transform.
      */
     let numPoints;
+
+    /**
+    * Rate of sampled time points.
+    */
+    let timeRate
+
+    /**
+     * Rate of sampled frequency points.
+     */
+    let freqRate;
 
     /**
      * Width of a plot cell.
@@ -51,24 +61,14 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
     let gaborTransform;
 
     /**
+     * Sampled and scaled spectrogram.
+     */
+    let scaledSpectrogram;
+
+    /**
      * True if two windows are used, false otherwise.
      */
     let useTwoWindows;
-
-    /**
-     * Second transform.
-     */
-    let gaborTransform2;
-
-    /**
-     * Rate of sampled time points.
-     */
-    let timeRate
-
-    /**
-     * Rate of sampled frequency points.
-     */
-    let freqRate;
 
     /**
      * Updates the plot.
@@ -84,26 +84,14 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
         // Sets the Gabor transform
         gaborTransform = inputGaborTransform;
 
-        // Get number of points
+        // Get number of time points
         numPoints = gaborTransform.getNumPoints();
 
         // Sets the Gabor transform if the second window is present
         useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
-        if (useTwoWindows) {
-            if (typeof options.window2 === 'undefined') {
-                useTwoWindows = false;
-            } else {
-                gaborTransform2 = new transformManager(
-                    gaborTransform.getSignal(), options.window2,
-                    {
-                        N: numPoints,
-                        padding: gaborTransform.getPadding(),
-                        timeRate: timeRate,
-                        freqRate: freqRate
-                    }
-                );
-            }
-        }
+        gaborTransform.setUseTwoWindows(useTwoWindows);
+
+        scaledSpectrogram = gaborTransform.getScaledSpectrogram();
     }
 
     // Creates the plot
@@ -138,21 +126,24 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
 
         for (let i = 0; i < numPoints; i += timeRate) {
             for (let j = 0; j < numPoints; j += freqRate) {
-                // Gabor transform
-                const vgf = gaborTransform.gaborAt(i, j / freqRate);
-                // Spectrogram
-                let spectrogram = vgf.abs();
+                // // Gabor transform
+                // const vgf = gaborTransform.gaborAt(i, j / freqRate);
+                // // Spectrogram
+                // let spectrogram = vgf.abs();
 
-                // Adds second Gabor transform if present
-                if (useTwoWindows) {
-                    spectrogram *= gaborTransform2.gaborAt(i, j / freqRate).abs();
-                }
+                // // Adds second Gabor transform if present
+                // if (useTwoWindows) {
+                //     spectrogram *= gaborTransform2.gaborAt(i, j / freqRate).abs();
+                // }
+
+                let spectrogram = scaledSpectrogram[i / timeRate][j / freqRate];
 
                 // Position of the cell
                 const xPos = Math.round(i * cellWidth);
                 const yPos = height - Math.round(j * cellHeight)
                 // Grey value of the cell
-                const alpha = - Math.exp(- spectrogram) + 1;
+                // const alpha = - Math.pow(Math.exp(- spectrogram), 1 / 4) + 1;
+                const alpha = spectrogram;
 
                 // Draws the cell
                 ctx.beginPath();

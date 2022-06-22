@@ -53,6 +53,14 @@ class ComplexNumber {
     }
 
     /**
+     * Get the conjugate.
+     * @returns The conjugate.
+     */
+    conj() {
+        return new ComplexNumber(this.re, -this.im);
+    }
+
+    /**
      * Get the absolute value, that is A in A*e^(i*phi)
      * @returns The absolute value.
      */
@@ -83,29 +91,24 @@ let gaussianWindow = function (sigma, options = []) {
     let publicAPIs = {};
 
     /**
-     * Coefficient 1 / (2 * PI * sigma^2).
+     * Coefficient -1 / a.
      */
-    let c1 = 1 / Math.sqrt((2 * Math.PI * sigma ** 2));
-
-    /**
-     * Coefficient -1 / (2 * PI * sigma^2).
-     */
-    let c2;
-
-    /**
-     * Expected value;
-     */
-    let mu;
-
-    /**
-     * Time scaling factor.
-     */
-    let timeScale;
+    let c;
 
     /**
      * Sampled window.
      */
     let sampledWindow = [];
+
+    /**
+     * Duration.
+     */
+    let duration;
+
+    /**
+     * Time scale.
+     */
+    let timeScale;
 
     /**
      * Get the number of sampled points.
@@ -145,7 +148,7 @@ let gaussianWindow = function (sigma, options = []) {
      * Get value of Gaussian window g(x) for x.
      */
     publicAPIs.valueAt = (x) => {
-        return Math.exp(c2 * Math.pow(x * timeScale - mu, 2));
+        return Math.exp(c * Math.pow(x * duration, 2));
     }
 
     /**
@@ -154,11 +157,16 @@ let gaussianWindow = function (sigma, options = []) {
      * @param {*} options
      */
     publicAPIs.update = (sigma, options) => {
-        c2 = - 1 / (2 * Math.pow(sigma, 2));
-        mu = toDefaultIfUndefined(options.mu, 0);
+        // Duration of the signal
+        duration = options.L;
 
+        // Time scale
         timeScale = toDefaultIfUndefined(musicManager.getTimeScale(), 1);
-        sampledWindow = sample(toDefaultIfUndefined(options.N, 1000));
+
+        c = - 1 / (2 * Math.PI * Math.pow(sigma, 2) * timeScale);
+
+        // timeScale = toDefaultIfUndefined(musicManager.getTimeScale(), 1);
+        sampledWindow = sample(toDefaultIfUndefined(options.N, publicAPIs.getNumPoints()));
     }
 
     // Creates the window.
@@ -230,7 +238,7 @@ let musicSignal = function (inputTracks, options = []) {
                 d += note.d;
             })
 
-            tracksLength[i] = d * timeScale;
+            tracksLength[i] = d;
         });
 
         return tracksLength;
@@ -305,14 +313,14 @@ let musicSignal = function (inputTracks, options = []) {
      * Get value of the music signal f(x) for x ∈ [0, 1].
      */
     publicAPIs.valueAt = (x) => {
-        let time = x * duration / timeScale;
+        let time = x * duration;
 
-        if (time > 0 || time < duration / timeScale) {
+        if (time > 0 || time < duration) {
             let fx = 0;
             let freq = 0;
 
             tracks.forEach((track, j) => {
-                if (time < tracksLength[j] / timeScale) {
+                if (time < tracksLength[j]) {
                     let i = 0;
                     let dt = 0;
 
@@ -322,8 +330,10 @@ let musicSignal = function (inputTracks, options = []) {
                     };
 
                     freq = noteToFreq(track[i].note, toDefaultIfUndefined(track[i].oct, 0));
-                    fx += track[i].vol // Amplitude
-                        * Math.sin((2 * Math.PI * freq / linearSpeed) * (time * timeScale));
+                    let expCoefficient = Math.exp(- Math.PI
+                        * Math.pow(2 * ((time - dt) / track[i].d - 1 / 2), 12));
+                    fx += expCoefficient * track[i].vol // Amplitude
+                        * Math.sin(2 * Math.PI * freq * time);
                 }
             });
             return fx;
@@ -350,7 +360,6 @@ let musicSignal = function (inputTracks, options = []) {
         tracks = inputTracks;
 
         baseFreq = toDefaultIfUndefined(options.baseFreq, 1);
-        linearSpeed = toDefaultIfUndefined(options.linearSpeed, 1);
         timeScale = toDefaultIfUndefined(musicManager.getTimeScale(), 1);
 
         tracksLength = getTracksLength();
@@ -393,17 +402,32 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
     /**
      * Window function g(x).
      */
-    let windowFunction;
+    let windowFunction1;
+
+    /**
+     * Second window function.
+     */
+    let windowFunction2;
 
     /**
      * Sampled points of the window.
      */
-    let sampledWindow = [];
+    let sampledWindow1 = [];
 
     /**
      * Sampled coefficient of the Gabor transform.
      */
     let sampledCoefficient = []
+
+    /**
+     * Sampled and scaled spectrogram.
+     */
+    let sampledSpectrum1 = [];
+
+    /**
+    * Sampled and scaled spectrogram for the second window.
+    */
+    let sampledSpectrum2 = [];
 
     /**
      * Duration of the signal.
@@ -426,7 +450,7 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
     let rangeDiff;
 
     /**
-     * Number of sampled points.
+     * Number of sampled time points.
      */
     let numPoints;
 
@@ -446,6 +470,11 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
     let dt;
 
     /**
+     * True if two windows are used, false otherwise.
+     */
+    let useTwoWindows;
+
+    /**
      * Get the number of sampled points of the signal and window.
      * @returns Number of sampled points.
      */
@@ -454,8 +483,16 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
     }
 
     /**
+     * Get the time rate.
+     * @returns The time rate.
+     */
+    publicAPIs.getFreqRate = function () {
+        return timeRate;
+    }
+
+    /**
      * Get the frequency rate.
-     * @returns THe frequency rate.
+     * @returns The frequency rate.
      */
     publicAPIs.getFreqRate = function () {
         return freqRate;
@@ -478,11 +515,60 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
     }
 
     /**
+     * Sets the two windows transform status.
+     * @param {Boolean} inputUseTwoWindows True if two windows are used, false otherwise.
+     */
+    publicAPIs.setUseTwoWindows = (inputUseTwoWindows) => {
+        useTwoWindows = inputUseTwoWindows;
+        publicAPIs.updateSpectrogram();
+    }
+
+    /**
+     * Updates the Gabor transform structure.
+     * @param {*} inputSignal Signal function f(x).
+     * @param {*} inputWindowFunction Window function g(x).
+     * @param {*} options 
+     */
+    publicAPIs.update = function (inputSignal, inputWindowFunction, options) {
+        // Updates the signal and the windows
+        signal = inputSignal;
+        windowFunction1 = inputWindowFunction;
+        windowFunction2 = toDefaultIfUndefined(options.window2, windowFunction1);
+        windowFunction3 = toDefaultIfUndefined(options.window3, windowFunction1);
+
+        // Updates the duration and range of the signal
+        signalDuration = signal.getDuration();
+        range = signal.getRange();
+        rangeDiff = range.max - range.min;
+
+        // Updates the zoom level
+        padding = toDefaultIfUndefined(options.padding, .1) * rangeDiff;
+
+        // Updates the number of sampled points
+        numPoints = toDefaultIfUndefined(options.N, 1200);
+        timeRate = toDefaultIfUndefined(options.timeRate, 1);
+        freqRate = toDefaultIfUndefined(options.freqRate, 1);
+        dt = signalDuration / numPoints;
+
+        // Updates the sampled signal and windows
+        sampledSignal = signal.getSampled(numPoints);
+        sampledWindow1 = windowFunction1.getSampled(numPoints);
+        sampledWindow2 = windowFunction2.getSampled(numPoints);
+
+        useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
+
+        // Updates the coefficient
+        publicAPIs.updateCoefficients();
+
+        // Updates the spectrogram
+        publicAPIs.updateSpectrogram();
+    }
+
+    /**
      * Updates the pre-computed coefficients.
      * @param {Number} inputFreqRate Frequency rate.
      */
-    publicAPIs.updateCoefficients = (inputFreqRate) => {
-        freqRate = inputFreqRate;
+    publicAPIs.updateCoefficients = () => {
         for (let i = 0; i < numPoints; i++) {
             sampledCoefficient[i] = [];
             for (let j = 0; j < numPoints; j += freqRate) {
@@ -493,40 +579,18 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
         }
     }
 
-    /**
-     * Updates the Gabor transform structure.
-     * @param {*} inputSignal Signal function f(x).
-     * @param {*} inputWindowFunction Window function g(x).
-     * @param {*} options 
-     */
-    publicAPIs.update = function (inputSignal, inputWindowFunction, options) {
-        // Updates the signal and teh window
-        signal = inputSignal;
-        windowFunction = inputWindowFunction;
-
-        // Updates the duration and range of the singnal
-        signalDuration = signal.getDuration();
-        range = signal.getRange();
-        rangeDiff = range.max - range.min;
-
-        // Updates the zoom level
-        padding = toDefaultIfUndefined(options.padding, .1) * rangeDiff;
-
-        // Updates the number of sampled points
-        numPoints = toDefaultIfUndefined(options.N, 1200);
-        timeRate = options.timeRate;
-        dt = signalDuration / numPoints;
-
-        // Updates the sampled signal
-        sampledSignal = signal.getSampled(numPoints);
-        sampledWindow = windowFunction.getSampled(numPoints);
-
-        // Updates the coefficient
-        publicAPIs.updateCoefficients(options.freqRate);
+    publicAPIs.updateSpectrogram = () => {
+        for (let i = 0; i < numPoints; i += timeRate) {
+            sampledSpectrum1[i / timeRate] = [];
+            sampledSpectrum2[i / timeRate] = [];
+            for (let j = 0; j < numPoints; j += freqRate) {
+                let sampledGabor = publicAPIs.gaborAt(i, j / freqRate);
+                sampledSpectrum1[i / timeRate][j / freqRate] = sampledGabor.vgf1;
+                sampledSpectrum2[i / timeRate][j / freqRate] =
+                    sampledGabor.vgf2.multiply(sampledGabor.vgf1);
+            }
+        }
     }
-
-    // Creates the transform manager
-    publicAPIs.update(inputSignal, inputWindowFunction, options);
 
     /**
      * Compute the Gabor transform Vgf(x, omega) for the signal f and the window g at (x, omega).
@@ -535,7 +599,8 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
      * @returns Vgf(x, omega).
      */
     publicAPIs.gaborAt = (x, omega) => {
-        let vgf = new ComplexNumber(0, 0);
+        let vgf1 = new ComplexNumber(0, 0);
+        let vgf2 = new ComplexNumber(0, 0);
 
         for (let t = 0; t < numPoints; t++) {
             // Coefficient e^(-2 * PI * t * omega)
@@ -543,13 +608,17 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
             // f(t)
             const f = sampledSignal[t];
             // g(t - x)
-            const g = sampledWindow[numPoints + t - x];
+            const g1 = sampledWindow1[numPoints + t - x];
+            // g2(t - x)
+            const g2 = sampledWindow2[numPoints + t - x];
 
             // Integral of coefficient * f * g * dt
-            vgf.add(c.scale(f * g * dt));
+            vgf1.add(c.scale(f * g1 * dt));
+            // Integral of coefficient * f * g * dt
+            vgf2.add(c.scale(f * g2 * dt));
         }
 
-        return vgf;
+        return { vgf1: vgf1, vgf2: vgf2 };
     }
 
     publicAPIs.fourierAt = (omega) => {
@@ -566,6 +635,66 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
 
         return ff;
     }
+
+    publicAPIs.getScaledSpectrogram = () => {
+        let spectrum = useTwoWindows ? sampledSpectrum2 : sampledSpectrum1;
+
+        let scaledSpectrogram = [];
+
+        spectrum.forEach((a, i) => {
+            scaledSpectrogram[i] = [];
+            a.map((b, j) => {
+                scaledSpectrogram[i][j] = b.abs();
+            });
+            return a;
+        });
+
+        var maxRow = scaledSpectrogram.map(row => {
+            return Math.max.apply(Math, row);
+        });
+        var maxValue = Math.max.apply(null, maxRow);
+
+        scaledSpectrogram.map(a => {
+            a.map(b => {
+                return b / maxValue;
+            });
+            return a;
+        });
+
+        return scaledSpectrogram;
+    }
+
+    publicAPIs.synthesizeSignal = (t) => {
+        synthesizedSignal = [];
+
+        for (t = 0; t < numPoints; t++) {
+            synthesizedSignal[t] = publicAPIs.inverseGaborAt(t).abs();
+        }
+
+        return synthesizedSignal;
+    }
+
+    publicAPIs.inverseGaborAt = (t) => {
+        let f = new ComplexNumber(0, 0);
+
+        for (let x = 0; x < numPoints; x++) {
+            for (let omega = 0; omega < numPoints; omega += freqRate) {
+                const g2 = sampledWindow2[numPoints + x - t];
+                const c = sampledCoefficient[x][omega / freqRate];
+
+                const spectrum = useTwoWindows ?
+                    sampledSpectrum2[Math.floor(x / timeRate)][omega / freqRate] :
+                    sampledSpectrum1[Math.floor(x / timeRate)][omega / freqRate];
+
+                f.add(spectrum.multiply(c).scale(g2 * dt));
+            }
+        }
+
+        return f;
+    }
+
+    // Creates the transform manager
+    publicAPIs.update(inputSignal, inputWindowFunction, options);
 
     return publicAPIs;
 }

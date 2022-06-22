@@ -1,9 +1,9 @@
  /**
   * General plot structure.
-  * @param {Number} idNumber 
+  * @param {Number} id 
   * @returns Public APIs.
   */
- let plotStructure = function (idNumber, options = []) {
+ let plotStructure = function (id, options = []) {
 
     /**
      * Public methods.
@@ -28,7 +28,7 @@
     |   Canvas
     */
 
-    const canvas = document.getElementById("canvas-" + idNumber);
+    const canvas = document.getElementById("canvas-" + id);
     const ctx = canvas.getContext('2d', options);
 
     /**

@@ -1,9 +1,9 @@
 /**
- * Plot of the signal function f(x).
+ * Plot of the synthesized signal function f(x).
  * @param {Number} id Id of the signal plot.
  * @returns Public APIs.
  */
- let signalPlot = function (id) {
+let synthesisPlot = function (id) {
 
     /**
      * Public methods.
@@ -39,38 +39,27 @@
     let yScale;
 
     /**
-     * Signal function f(x).
+     * Synthesized signal function f(x).
      */
-    let signal;
-
-    /**
-     * Sampled signal.
-     */
-    let sampledSignal;
+    let synthesizedSignal;
 
     /**
      * Updates the plot.
      * @param {*} inputSignal Signal function f(x), 
      * @param {*} options 
      */
-    publicAPIs.update = function (inputSignal, options) {
+    publicAPIs.update = function (inputSignal) {
         // Resizes canvas
         publicAPIs.resizeCanvas();
 
         // Updates the signal function
-        signal = inputSignal;
+        synthesizedSignal = inputSignal;
 
-        // Updates sampled window and signal
-        if (typeof options.N === 'undefined') {
-            numPoints = signal.getNumPoints();
-            sampledSignal = signal.getSampled();
-        } else {
-            numPoints = options.N;
-            sampledSignal = signal.getSampled(numPoints);
-        }
+        // Length of the signal
+        numPoints = synthesizedSignal.length;
 
         // Sets the scale according to the amplitude
-        yScale = toDefaultIfUndefined(options.yScale, 0.4 / signal.getAmp());
+        yScale = 0.4 / Math.max(...synthesizedSignal);
 
         // Draws the plot
         publicAPIs.drawPlot();
@@ -110,7 +99,7 @@
         for (let i = 1; i < numPoints; i++) {
             ctx.lineTo(
                 i / numPoints * width,
-                height - height * (0.5 + yScale * sampledSignal[i]));
+                height - height * (0.5 + yScale * synthesizedSignal[i]));
         }
         ctx.stroke();
     }
@@ -118,7 +107,7 @@
     /**
      * Clears the plot.
      */
-     publicAPIs.clearPlot = () => {
+    publicAPIs.clearPlot = () => {
         ctx.fillStyle = "#ffffff";
 
         ctx.beginPath();

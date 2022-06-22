@@ -36,7 +36,7 @@
 
             <div style="display: grid; place-items: center; margin-top: 10px;">
                 <div>
-                    <span class="label">spectrogram of a signal</span>
+                    <span class="label">sound analysis</span>
                     <span id="refresh-all" class="material-symbols-outlined refresh" style="margin-left: -2px">
                         refresh
                     </span>
@@ -45,24 +45,25 @@
 
             <div style="height: 20pt;"></div>
 
-            <div class="plot-container" id="plot-1">
-                <canvas name="plot" class="plot main" id="canvas-1" tabindex="1" style="height: 75px;"></canvas>
+            <div class="plot-container" id="plot-2">
+                <canvas name="plot" class="plot main" id="canvas-window" tabindex="2" style="height: 75px;"></canvas>
                 <div name="plot-loader" id="loader-1" class="plot loader"></div>
             </div>
 
             <div style="height: 15pt;"></div>
 
-            <div class="plot-container" id="plot-2">
-                <canvas name="plot" class="plot main" id="canvas-2" tabindex="3" style="height: 75px;"></canvas>
+            <div class="plot-container" id="plot-3">
+                <canvas name="plot" class="plot" id="canvas-gabor" tabindex="3" style="height: 200px;"></canvas>
+                <canvas name="plot" class="plot stacked" id="canvas-fourier" tabindex="4"
+                    style="height: 200px; opacity: 0;"></canvas>
                 <div name="plot-loader" id="loader-2" class="plot loader"></div>
             </div>
 
-            <div style="height: 30pt;"></div>
+            <div style="height: 15pt;"></div>
 
-            <div class="plot-container" id="plot-3">
-                <canvas name="plot" class="plot" id="canvas-3" tabindex="4" style="height: 200px;"></canvas>
-                <canvas name="plot" class="plot stacked" id="canvas-4" tabindex="5"
-                    style="height: 200px; opacity: 0;"></canvas>
+            <div class="plot-container" id="plot-2">
+                <canvas name="plot" class="plot" id="canvas-synthesis" tabindex="5" style="height: 75px;"></canvas>
+                <canvas name="plot" class="plot stacked" id="canvas-difference" tabindex="6" style="height: 75px;"></canvas>
                 <div name="plot-loader" id="loader-3" class="plot loader"></div>
             </div>
 
@@ -106,8 +107,6 @@
                     <div style="margin-top: 4px;">
                         gabor<span style="visibility: hidden;">__</span>
                         <span class="material-symbols-outlined">chevron_right</span>
-                        N:
-                        <input id="gabor-num-points" class="input-box" type="text" maxlength="5" value="1200">
                         t-rate:
                         <input id="t-rate" class="input-box" type="text" maxlength="3" value="5">
                         f-rate:
@@ -135,6 +134,17 @@
                             refresh
                         </span>
                     </div>
+                    <div style="margin-bottom: 4px;">
+                        synth<span style="visibility: hidden;">__</span>
+                        <span class="material-symbols-outlined">
+                            chevron_right
+                        </span>
+                        sigma-3:
+                        <input id="sigma-3" class="input-box second window" type="text" maxlength="6" value="0.5">
+                        <span id="synthesize" class="material-symbols-outlined button">
+                            refresh
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -152,6 +162,7 @@
         <script src="js/src/plots/window-plot.js"></script>
         <script src="js/src/plots/gabor-plot.js"></script>
         <script src="js/src/plots/fourier-plot.js"></script>
+        <script src="js/src/plots/synthesis-plot.js"></script>
         <script src="js/src/plots/plots-manager.js"></script>
 </body>
 

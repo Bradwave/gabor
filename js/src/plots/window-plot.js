@@ -175,9 +175,11 @@ let windowPlot = function (idNumber) {
         // Clears the canvas
         ctx.clearRect(0, 0, width, height);
 
+        publicAPIs.clearPlot();
+
         // Draws the signal
         if (showSignal) {
-            ctx.lineWidth = 1;
+            ctx.lineWidth = .75;
             ctx.strokeStyle = "rgb(0, 0, 0, .25)"
             ctx.beginPath();
             ctx.moveTo(0, height * 0.5);
@@ -192,7 +194,7 @@ let windowPlot = function (idNumber) {
             // Draws the second window if present
             if (useTwoWindows) {
                 ctx.strokeStyle = "#06688c"
-                ctx.lineWidth = 1.15;
+                ctx.lineWidth = 1;
 
                 ctx.beginPath();
                 ctx.moveTo(0, height * 0.5);
@@ -208,7 +210,7 @@ let windowPlot = function (idNumber) {
             }
 
             ctx.strokeStyle = "#8c1500"
-            ctx.lineWidth = 1.25;
+            ctx.lineWidth = 1;
 
             ctx.beginPath();
             ctx.moveTo(0, height * 0.5);
@@ -226,7 +228,7 @@ let windowPlot = function (idNumber) {
         // Draws the second window if present
         if (useTwoWindows) {
             ctx.strokeStyle = "#0c95c7";
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 1.15;
 
             ctx.beginPath();
             ctx.setLineDash([5, 5]);
@@ -241,7 +243,7 @@ let windowPlot = function (idNumber) {
                 const w = sampledWindow2[numPoints + i - Math.round(windowPositions[1] * numPoints)];
                 ctx.lineTo(
                     i / numPoints * width,
-                    height * (0.5 - yScale * w)
+                    height * (0.5 - 0.4 * w)
                 );
             }
             ctx.stroke();
@@ -251,7 +253,7 @@ let windowPlot = function (idNumber) {
         // Draws the window
 
         ctx.strokeStyle = "#B01A00";
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 1.25;
 
         ctx.beginPath();
         ctx.setLineDash([5, 5]);
@@ -266,7 +268,7 @@ let windowPlot = function (idNumber) {
             const w = sampledWindow[numPoints + i - Math.round(windowPositions[0] * numPoints)];
             ctx.lineTo(
                 i / numPoints * width,
-                height * (0.5 - yScale * w)
+                height * (0.5 - 0.4 * w)
             );
         }
         ctx.stroke();

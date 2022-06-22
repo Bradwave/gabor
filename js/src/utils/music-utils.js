@@ -17,7 +17,7 @@ const musicManager = new function () {
     /**
      * Volume.
      */
-    let volume = 10;
+    let volume = 1;
 
     /**
      * Get the time scale factor.
@@ -133,11 +133,12 @@ const musicManager = new function () {
                 musicSheet[i].push({
                     note: noteName,
                     oct: noteOctave,
-                    d: noteDuration,
+                    d: noteDuration * timeScale,
                     vol: noteVolume * volume
                 });
             })
         });
+
         return musicSheet;
     }
 
