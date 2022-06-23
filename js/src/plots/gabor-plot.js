@@ -71,9 +71,23 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
     let useTwoWindows;
 
     /**
-     * True if the processed spectrogram is displayed, false otherwise.
+     * True if the the spectrogram is editable, false otherwise.
      */
-    let showProcessed;
+    let isEditable;
+
+    /**
+     * Selection element div.
+     */
+    let selectionArea;
+
+    let selecting = false;
+
+    let selected = false;
+
+    let x1 = 0;
+    let x2 = 0;
+    let y1 = 0;
+    let y2 = 0;
 
     /**
      * Updates the plot.
@@ -96,6 +110,9 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
         useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
         gaborTransform.setUseTwoWindows(useTwoWindows);
 
+        isEditable = toDefaultIfUndefined(options.isEditable, false);
+        selectionArea = options.selectionArea;
+
         scaledSpectrogram = gaborTransform.getScaledSpectrogram();
     }
 
@@ -109,6 +126,10 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
     publicAPIs.setProcessedVisibility = (showProcessed) => {
         gaborTransform.setProcessedSynthesis(showProcessed);
         scaledSpectrogram = gaborTransform.getScaledSpectrogram();
+    }
+
+    publicAPIs.setEditable = (isSpectrogramEditable) => {
+        isEditable = isSpectrogramEditable;
     }
 
     /*_______________________________________
@@ -129,6 +150,88 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
 
         cellWidth = width / numPoints;
         cellHeight = height / numPoints;
+    }
+
+    plot.getCanvas().onmousedown = (e) => {
+        if (isEditable) {
+            selecting = true;
+            const rect = e.target.getBoundingClientRect();
+            // Position within the element
+            x1 = e.clientX - rect.left;
+            y1 = e.clientY - rect.top;
+
+            selectionArea.style.left = x1 + 'px';
+            selectionArea.style.top = y1 + 'px';
+            selectionArea.style.width = '0px';
+            selectionArea.style.height = '0px';
+
+            selectionArea.style.opacity = 1;
+            selectionArea.style.visibility = "visible";
+        }
+    }
+
+    plot.getCanvas().onmousemove = (e) => {
+        if (isEditable && selecting) {
+            selected = false;
+
+            const rect = e.target.getBoundingClientRect();
+            // Position within the element
+            x2 = e.clientX - rect.left;
+            y2 = e.clientY - rect.top;
+
+            if (x2 > x1) {
+                selectionArea.style.width = x2 - x1 + 'px';
+            } else {
+                selectionArea.style.left = x2 + "px";
+                selectionArea.style.width = x1 - x2 + 'px';
+            }
+            if (y2 > y1) {
+                selectionArea.style.height = y2 - y1 + 'px';
+            } else {
+                selectionArea.style.top = y2 + 'px';
+                selectionArea.style.height = y1 - y2 + 'px';
+            }
+        }
+    }
+
+    plot.getCanvas().onmouseup = () => {
+        if (isEditable) {
+            if (isBetween(x2, x1 - 2, x1 + 2) && isBetween(y2, y1 - 2, y1 + 2)) {
+                selected = false;
+                selectionArea.style.opacity = 0;
+                selectionArea.style.visibility = "hidden";
+            } else {
+                selected = true;
+            }
+            selecting = false;
+        }
+    }
+
+    plot.getCanvas().onclick = (e) => {
+        const rect = e.target.getBoundingClientRect();
+        // Position within the element
+        x2 = e.clientX - rect.left;
+        y2 = e.clientY - rect.top;
+
+        if (isBetween(x2, x1 - 2, x1 + 2) && isBetween(y2, y1 - 2, y1 + 2)) {
+            selecting = false;
+            selected = false;
+            selectionArea.style.opacity = 0;
+            selectionArea.style.visibility = "hidden";
+        }
+    }
+
+    publicAPIs.cutArea = () => {
+        if (selected) {
+            const t1 = dpi * (x1 < x2 ? x1 / width : x2 / width);
+            const t2 = dpi * (x2 > x1 ? x2 / width : x1 / width);
+
+            const omega1 = 1 - dpi * (y2 > y1 ? y2 / height : y1 / height);
+            const omega2 = 1 - dpi * (y1 < y2 ? y1 / height : y2 / height);
+
+            gaborTransform.cutSpectrogram(t1, t2, omega1, omega2);
+            scaledSpectrogram = gaborTransform.getScaledSpectrogram();
+        }
     }
 
     /**

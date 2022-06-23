@@ -55,7 +55,8 @@
             <div class="plot-container" id="plot-3">
                 <canvas name="plot" class="plot" id="canvas-gabor" tabindex="3" style="height: 200px;"></canvas>
                 <canvas name="plot" class="plot stacked" id="canvas-fourier" tabindex="4"
-                    style="height: 200px; opacity: 0;"></canvas>
+                    style="height: 200px; opacity: 0; visibility: collapse;"></canvas>
+                <div class="selection-area" id="selection-area"></div>
                 <div name="plot-loader" id="loader-2" class="plot loader"></div>
             </div>
 
@@ -95,8 +96,8 @@
                         </span>
                         sigma-1:
                         <input id="sigma-1" class="input-box window" type="text" maxlength="6" value="0.5">
-                        <span name="window-button" class="material-symbols-outlined button second-window"
-                            id="window-2" style="opacity: 0.5;">
+                        <span name="window-button" class="material-symbols-outlined button second-window" id="window-2"
+                            style="opacity: 0.5;">
                             sync_alt
                         </span>
                         sigma-2:
@@ -143,7 +144,16 @@
                         denoise:
                         <input id="denoise" class="input-box" type="text" maxlength="4" value="0.1">
                         <span id="processed" class="material-symbols-outlined button" style="opacity: 0.5;">
-                            bar_chart
+                            <!-- bar_chart -->
+                            <!-- full_stacked_bar_chart -->
+                            <!-- filter_alt -->
+                            graphic_eq
+                        </span>
+                        <span id="edit" class="material-symbols-outlined button" style="opacity: 0.5;">
+                            edit
+                        </span>
+                        <span id="cut" class="material-symbols-outlined button">
+                            cut
                         </span>
                     </div>
                 </div>

@@ -743,6 +743,22 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
         return f.divide(numPoints / freqRate);
     }
 
+    publicAPIs.cutSpectrogram = (t1, t2, omega1, omega2) => {
+        console.log(t1 + ", " + t2 + "; " + omega1 + ", " + omega2)
+
+        for (let i = Math.round(t1 * numPoints);
+            i < Math.round(t2 * numPoints); i += timeRate) {
+            for (let j = Math.round(omega1 * numPoints);
+                j < Math.round(omega2 * numPoints); j += freqRate) {
+
+                sampledSpectrum1[Math.floor(i / timeRate)][Math.floor(j / freqRate)]
+                    = new ComplexNumber(0, 0);
+                sampledSpectrum2[Math.floor(i / timeRate)][Math.floor(j / freqRate)]
+                    = new ComplexNumber(0, 0);
+            }
+        }
+    }
+
     // Creates the transform manager
     publicAPIs.update(inputSignal, inputWindowFunction, options);
 

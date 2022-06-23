@@ -15,6 +15,7 @@
         2.4 Input box
         2.5 Textarea
         2.6 Buttons
+        2.7 Selection area
         
 ===================================== */
 
@@ -245,7 +246,7 @@ canvas.plot.main:focus {
 }
 
 canvas.focused {
-    transform: translate(0px, -2px);
+    /* transform: translate(0px, -2px); */
     box-shadow: 0 0 20px #00000030;
 }
 
@@ -442,4 +443,17 @@ textarea.input-area {
 .material-symbols-outlined.button.fourier {
     color: var(--primary);
     opacity: 0.2;
+}
+
+div.selection-area {
+    position: absolute;
+    z-index: 99;
+    pointer-events: none;
+    width: 0;
+    height: 0;
+    visibility: collapse;
+    opacity: 0;
+    background-color: #b01a0026;
+    border: 1px solid var(--accent);
+    transition: opacity .1s ease-in-out;
 }

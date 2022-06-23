@@ -50,9 +50,24 @@ const plotsManager = new function () {
     const resetFourierButton = document.getElementById("reset-fourier");
 
     /**
-     * Reset Fourier transform position button.
+     * Show or hide processed spectrogram.
      */
     const processedButton = document.getElementById("processed");
+
+    /**
+     * Edit the spectrogram.
+     */
+    const editButton = document.getElementById("edit");
+
+    /**
+     * Cut the selected area in the spectrogram.
+     */
+    const cutButton = document.getElementById("cut");
+
+    /**
+    * Selection element div.
+    */
+    const selectionArea = document.getElementById("selection-area");
 
     /**
      * Plots.
@@ -117,7 +132,7 @@ const plotsManager = new function () {
     /**
      * True if the Fourier plot is visible, false otherwise.
      */
-    let fourierVisible = false;
+    let fourierVisible = { previous: false, current: false };
 
     /**
      * True if the Fourier transform is movable, false otherwise.
@@ -153,6 +168,11 @@ const plotsManager = new function () {
     * True if the processed spectrogram is visible, false otherwise.
     */
     let showProcessed = false;
+
+    /**
+     * True if the spectrogram can be edited, false otherwise.
+     */
+    let isEditable = { previous: false, current: false };
 
     /**
      * Music sheet for the signal.
@@ -256,7 +276,9 @@ const plotsManager = new function () {
             {
                 useTwoWindows: useTwoWindows,
                 timeRate: timeRate,
-                freqRate: freqRate
+                freqRate: freqRate,
+                isEditable: isEditable.current,
+                selectionArea: selectionArea
             }
         ));
 
@@ -266,7 +288,7 @@ const plotsManager = new function () {
                 freqRate: fourierFreqRate,
                 power: fourierPower,
                 scale: fourierScale,
-                visibility: fourierVisible,
+                visibility: fourierVisible.current,
                 movability: fourierMovable,
                 position: fourierPosition,
             }
@@ -314,7 +336,8 @@ const plotsManager = new function () {
         if (isLoading) {
             canvases.forEach((canvas, i) => {
                 // Hides the canvases
-                canvas.style.opacity = (i != 2) ? opacity : (fourierVisible ? 0.2 : 0);
+                canvas.style.opacity = (i != 2) ?
+                    opacity : (fourierVisible.current ? 0.2 : 0);
                 canvas.style.visibility = "hidden";
             });
 
@@ -327,7 +350,8 @@ const plotsManager = new function () {
         } else {
             canvases.forEach((canvas, i) => {
                 // Displays the canvases
-                canvas.style.opacity = (i != 2) ? 1 : (fourierVisible ? 1 : 0);
+                canvas.style.opacity = (i != 2) ?
+                    1 : (fourierVisible.current ? 1 : 0);
                 canvas.style.visibility = "visible";
             });
 
@@ -521,7 +545,14 @@ const plotsManager = new function () {
                 break;
             default:
                 toggleFourier(false, fourierMovable);
-                plotInputs.get('fourier-visibility').value = "no";
+                fourierVisibilityInput.value = "no";
+        }
+
+        if (fourierVisible.current) {
+            isEditable.previous = isEditable.current;
+            toggleEdit(false);
+        } else {
+            toggleEdit(isEditable.previous);
         }
     }
 
@@ -530,10 +561,11 @@ const plotsManager = new function () {
      * @param {Boolean} visible True if the Fourier plot is visible, false otherwise.
      */
     const toggleFourier = (visible, movable) => {
-        fourierVisible = visible;
+        fourierVisible.current = visible;
         fourierMovable = movable;
 
         canvases[2].style.opacity = visible ? 1 : 0;
+        canvases[2].style.visibility = visible ? "visible" : "collapse";
         plots.get("fourier").setVisibility(visible);
         plots.get("fourier").setMovability(movable);
 
@@ -542,8 +574,8 @@ const plotsManager = new function () {
     }
 
     fourierMoveButton.onclick = () => {
-        toggleFourier(fourierVisible,
-            fourierVisible ? (fourierMovable ? false : true) : fourierMovable);
+        toggleFourier(fourierVisible.current,
+            fourierVisible.current ? (fourierMovable ? false : true) : fourierMovable);
     }
 
     resetFourierButton.onclick = () => {
@@ -571,15 +603,52 @@ const plotsManager = new function () {
 
     processedButton.onclick = () => {
         toggleProcessed(showProcessed ? false : true);
-        setLoadingStyle(true, 0.15);
+
         setTimeout(function () {
             plots.get('gabor').setProcessedVisibility(showProcessed);
             plots.get('synthesis').update(analysisController.synthesizeSignal());
             plots.get('gabor').drawPlot();
             plots.get('synthesis').drawPlot();
-            setLoadingStyle(false);
         }, 50);
+    }
 
+    /**
+     * Make the spectrogram editable or not.
+     * @param {Boolean} editable True if the spectrogram is editable, false otherwise.
+     */
+    const toggleEdit = (editable) => {
+        isEditable.current = editable;
+
+        editButton.style.color = editable ? "#B01A00" : "var(--primary)";
+        editButton.style.opacity = editable ? 1 : 0.5;
+
+        selectionArea.style.visibility = editable ? "visible" : "collapse";
+    }
+
+    editButton.onclick = () => {
+        toggleEdit(isEditable.current ? false : true);
+        plots.get('gabor').setEditable(isEditable.current);
+
+        if (isEditable.current) {
+            fourierVisible.previous = fourierVisible.current;
+            toggleFourier(false, fourierMovable);
+            document.getElementById("fourier-visible").value = "no";
+        } else {
+            toggleFourier(fourierVisible.previous, fourierMovable);
+            document.getElementById("fourier-visible").value = fourierVisible.previous ?
+                "yes" : "no";
+        }
+    }
+
+    cutButton.onclick = () => {
+        if (isEditable.current) {
+            setTimeout(function () {
+                plots.get('gabor').cutArea();
+                plots.get('gabor').drawPlot();
+                plots.get('synthesis').update(analysisController.synthesizeSignal());
+                plots.get('synthesis').drawPlot();
+            }, 50);
+        }
     }
 
     refreshButton.onclick = () => {
