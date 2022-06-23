@@ -34,6 +34,11 @@ let synthesisPlot = function (id) {
     let numPoints;
 
     /**
+     * Max amplitude of the synthesized signal.
+     */
+    let maxAmplitude;
+
+    /**
      * Scale of the y (amplitude) axis.
      */
     let yScale;
@@ -58,8 +63,11 @@ let synthesisPlot = function (id) {
         // Length of the signal
         numPoints = synthesizedSignal.length;
 
+        // Max amplitude of the signal
+        maxAmplitude = Math.max(...synthesizedSignal);
+
         // Sets the scale according to the amplitude
-        yScale = 0.4 / Math.max(...synthesizedSignal);
+        yScale = 0.4 / maxAmplitude;
 
         // Draws the plot
         publicAPIs.drawPlot();
@@ -69,7 +77,7 @@ let synthesisPlot = function (id) {
     |   Canvas
     */
 
-    const plot = new plotStructure(id, { alpha: false });
+    const plot = new plotStructure(id);
     const ctx = plot.getCtx();
 
     /**
@@ -91,7 +99,7 @@ let synthesisPlot = function (id) {
 
         publicAPIs.clearPlot();
 
-        ctx.strokeStyle = "#000000";
+        ctx.strokeStyle = "#555555";
         ctx.lineWidth = .75;
 
         ctx.beginPath();

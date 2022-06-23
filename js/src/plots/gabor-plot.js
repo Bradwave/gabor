@@ -71,6 +71,11 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
     let useTwoWindows;
 
     /**
+     * True if the processed spectrogram is displayed, false otherwise.
+     */
+    let showProcessed;
+
+    /**
      * Updates the plot.
      * @param {*} inputSignal Signal function f(x).
      * @param {*} inputWindowFunction Window function g(x).
@@ -96,6 +101,15 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
 
     // Creates the plot
     publicAPIs.updatePlot(inputGaborTransform, options);
+
+    /**
+     * Sets the visibility of the processed spectrogram.
+     * @param {Boolean} showProcessed True if the processed spectrogram is visible, false otherwise.
+     */
+    publicAPIs.setProcessedVisibility = (showProcessed) => {
+        gaborTransform.setProcessedSynthesis(showProcessed);
+        scaledSpectrogram = gaborTransform.getScaledSpectrogram();
+    }
 
     /*_______________________________________
     |   Canvas

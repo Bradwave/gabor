@@ -52,7 +52,7 @@ const plotsManager = new function () {
     /**
      * Reset Fourier transform position button.
      */
-    const synthesisButton = document.getElementById("synthesize");
+    const processedButton = document.getElementById("processed");
 
     /**
      * Plots.
@@ -75,11 +75,6 @@ const plotsManager = new function () {
     let sigma2 = 1;
 
     /**
-     * Sigma of the synthesis function
-     */
-    let sigma3 = 0.5;
-
-    /**
      * True if two windows are used, false otherwise.
      */
     let useTwoWindows = false;
@@ -93,6 +88,11 @@ const plotsManager = new function () {
      * Music volume multiplier.
      */
     let volume = 1;
+
+    /**
+     * Noise factor
+     */
+    let noiseFactor = 0.1;
 
     /**
      * Number of sampled points for the signal and window.
@@ -145,11 +145,29 @@ const plotsManager = new function () {
     let fourierPosition = 0;
 
     /**
+     * Denoise factor.
+     */
+    let denoiseFactor = 0.1;
+
+    /**
+    * True if the processed spectrogram is visible, false otherwise.
+    */
+    let showProcessed = false;
+
+    /**
      * Music sheet for the signal.
      */
     let musicSheet = "[a#/1 a1/2:2 a2/1.5:0.5]; [f1/2:1.5 _/1.5 g&1/0.5]";
 
-    let transformController;
+    /**
+     * Signal f(x)
+     */
+    let signal;
+
+    /**
+     * Gabor and Fourier transform controller.
+     */
+    let analysisController;
 
     // Creates the plots.
     publicAPIs.createPlots = function () {
@@ -176,16 +194,21 @@ const plotsManager = new function () {
         musicManager.setVolume(volume);
 
         //Signal setup
-        let signal;
         try {
             signal = new musicSignal(
                 musicManager.fromStringToMusic(musicSheet),
-                { N: signalNumPoints });
+                {
+                    N: signalNumPoints,
+                    noiseFactor: noiseFactor
+                });
         } catch (error) {
             console.log(error);
             signal = new musicSignal(
                 musicManager.fromStringToMusic("[a/1:1]"),
-                { N: signalNumPoints });
+                {
+                    N: signalNumPoints,
+                    noiseFactor: noiseFactor
+                });
         }
 
         // Windows setup
@@ -201,23 +224,18 @@ const plotsManager = new function () {
                 L: signal.getDuration()
             }
         );
-        const g3 = new gaussianWindow(sigma3,
-            {
-                N: signalNumPoints,
-                L: signal.getDuration()
-            }
-        );
 
-        transformController = new transformManager(
+        analysisController = new transformManager(
             signal, g1,
             {
                 N: signalNumPoints,
                 window2: g2,
-                window3: g3,
                 timeRate: timeRate,
                 freqRate: freqRate,
                 padding: padding,
-                useTwoWindows: useTwoWindows
+                useTwoWindows: useTwoWindows,
+                denoiseFactor: denoiseFactor,
+                isProcessed: showProcessed
             }
         );
 
@@ -234,7 +252,7 @@ const plotsManager = new function () {
         );
 
         // Gabor transform plot
-        plots.set('gabor', new gaborPlot('gabor', transformController,
+        plots.set('gabor', new gaborPlot('gabor', analysisController,
             {
                 useTwoWindows: useTwoWindows,
                 timeRate: timeRate,
@@ -243,7 +261,7 @@ const plotsManager = new function () {
         ));
 
         // Fourier plot
-        plots.set('fourier', new fourierPlot('fourier', transformController,
+        plots.set('fourier', new fourierPlot('fourier', analysisController,
             {
                 freqRate: fourierFreqRate,
                 power: fourierPower,
@@ -255,7 +273,7 @@ const plotsManager = new function () {
         ));
 
         // Synthesis
-        plots.get('synthesis').update([0]);
+        plots.get('synthesis').update(analysisController.synthesizeSignal());
     }
 
     // On window resize
@@ -353,6 +371,7 @@ const plotsManager = new function () {
             if (textarea.value == "bach toccata") {
                 plotInputs.get('time-scale').value = 2;
                 plotInputs.get('volume').value = 2;
+                plotInputs.get('noise').value = 0;
                 plotInputs.get('sigma-1').value = 0.005;
                 plotInputs.get('sigma-2').value = 0.05;
                 plotInputs.get('zoom').value = 0.15;
@@ -373,11 +392,11 @@ const plotsManager = new function () {
      * Ids of input boxes for the plots.
      */
     let inputIds = [
-        'signal-num-points', 'time-scale', 'volume',
+        'signal-num-points', 'time-scale', 'volume', 'noise',
         'sigma-1', 'sigma-2',
         't-rate', 'f-rate', 'zoom',
         'fourier-f-rate', 'fourier-power', 'fourier-scale',
-        'sigma-3'
+        'denoise'
     ];
 
     /**
@@ -405,6 +424,7 @@ const plotsManager = new function () {
         signalNumPoints = constrain(getInputNumber(plotInputs, 'signal-num-points'), 1, Infinity);
         timeScale = constrain(getInputNumber(plotInputs, 'time-scale'), 0, Infinity);
         volume = constrain(getInputNumber(plotInputs, 'volume'), 0, Infinity);
+        noiseFactor = getInputNumber(plotInputs, 'noise');
 
         // Window
         sigma1 = getInputNumber(plotInputs, 'sigma-1');
@@ -430,8 +450,8 @@ const plotsManager = new function () {
         fourierPower = getInputNumber(plotInputs, 'fourier-power');
         fourierFreqRate = constrain(getInputNumber(plotInputs, 'fourier-f-rate', 0, Infinity));
 
-        // Synthesis
-        sigma3 = getInputNumber(plotInputs, 'sigma-3');
+        // Processing and synthesis
+        denoiseFactor = constrain(getInputNumber(plotInputs, 'denoise'), 0, 1);
     }
 
     /**
@@ -538,14 +558,28 @@ const plotsManager = new function () {
         fourierPosition = position;
     }
 
-    synthesisButton.onclick = () => {
-        let synthesisedSignal = transformController.synthesizeSignal();
-        plots.get('synthesis').update(
-            synthesisedSignal,
-            {
-                N: signalNumPoints
-            }
-        );
+    /**
+     * Shows or hides the processed spectrogram.
+     * @param {Boolean} visible True if the processed spectrogram is visible, false otherwise.
+     */
+    const toggleProcessed = (visible) => {
+        showProcessed = visible;
+
+        processedButton.style.color = visible ? "#B01A00" : "var(--primary)";
+        processedButton.style.opacity = visible ? 1 : 0.5;
+    }
+
+    processedButton.onclick = () => {
+        toggleProcessed(showProcessed ? false : true);
+        setLoadingStyle(true, 0.15);
+        setTimeout(function () {
+            plots.get('gabor').setProcessedVisibility(showProcessed);
+            plots.get('synthesis').update(analysisController.synthesizeSignal());
+            plots.get('gabor').drawPlot();
+            plots.get('synthesis').drawPlot();
+            setLoadingStyle(false);
+        }, 50);
+
     }
 
     refreshButton.onclick = () => {

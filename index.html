@@ -62,8 +62,7 @@
             <div style="height: 15pt;"></div>
 
             <div class="plot-container" id="plot-2">
-                <canvas name="plot" class="plot" id="canvas-synthesis" tabindex="5" style="height: 75px;"></canvas>
-                <canvas name="plot" class="plot stacked" id="canvas-difference" tabindex="6" style="height: 75px;"></canvas>
+                <canvas name="plot" class="plot main" id="canvas-synthesis" tabindex="5" style="height: 75px;"></canvas>
                 <div name="plot-loader" id="loader-3" class="plot loader"></div>
             </div>
 
@@ -84,6 +83,8 @@
                         <input id="time-scale" class="input-box" type="text" maxlength="3" value="20">
                         vol:
                         <input id="volume" class="input-box" type="text" maxlength="3" value="1">
+                        noise:
+                        <input id="noise" class="input-box" type="text" maxlength="4" value="0.1">
                     </div>
                     <div style="margin-top: 4px;">
                         window<span style="visibility: hidden;">_</span>
@@ -139,10 +140,10 @@
                         <span class="material-symbols-outlined">
                             chevron_right
                         </span>
-                        sigma-3:
-                        <input id="sigma-3" class="input-box second window" type="text" maxlength="6" value="0.5">
-                        <span id="synthesize" class="material-symbols-outlined button">
-                            refresh
+                        denoise:
+                        <input id="denoise" class="input-box" type="text" maxlength="4" value="0.1">
+                        <span id="processed" class="material-symbols-outlined button" style="opacity: 0.5;">
+                            bar_chart
                         </span>
                     </div>
                 </div>

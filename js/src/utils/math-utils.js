@@ -65,7 +65,7 @@ class ComplexNumber {
      * @returns The absolute value.
      */
     abs() {
-        return Math.sqrt(this.re * this.re + this.im * this.im);;
+        return Math.sqrt(this.re * this.re + this.im * this.im);
     }
 
     /**
@@ -74,6 +74,14 @@ class ComplexNumber {
      */
     phase() {
         return Math.atan2(this.im, this.re);
+    }
+
+    /**
+     * Get the ral part.
+     * @returns The real part.
+     */
+    real() {
+        return this.re;
     }
 
 }
@@ -214,6 +222,11 @@ let musicSignal = function (inputTracks, options = []) {
     let timeScale;
 
     /**
+     * Noise factor.
+     */
+    let noiseFactor;
+
+    /**
      * Sampled points.
      */
     let sampledSignal = [];
@@ -333,7 +346,8 @@ let musicSignal = function (inputTracks, options = []) {
                     let expCoefficient = Math.exp(- Math.PI
                         * Math.pow(2 * ((time - dt) / track[i].d - 1 / 2), 12));
                     fx += expCoefficient * track[i].vol // Amplitude
-                        * Math.sin(2 * Math.PI * freq * time);
+                        * (Math.sin(2 * Math.PI * freq * time)
+                            + noiseFactor * Math.random());
                 }
             });
             return fx;
@@ -364,6 +378,8 @@ let musicSignal = function (inputTracks, options = []) {
 
         tracksLength = getTracksLength();
         duration = publicAPIs.getDuration();
+
+        noiseFactor = toDefaultIfUndefined(options.noiseFactor, 0.1);
 
         sampledSignal = sample(toDefaultIfUndefined(options.N, 1000));
     }
@@ -475,6 +491,21 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
     let useTwoWindows;
 
     /**
+     * Maximum spectrum value.
+     */
+    let maxSpectrum;
+
+    /**
+     * Denoise factor;
+     */
+    let denoiseFactor;
+
+    /**
+     * True if the spectrogram is processed, false otherwise.
+     */
+    let isProcessed;
+
+    /**
      * Get the number of sampled points of the signal and window.
      * @returns Number of sampled points.
      */
@@ -486,7 +517,7 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
      * Get the time rate.
      * @returns The time rate.
      */
-    publicAPIs.getFreqRate = function () {
+    publicAPIs.getTimeRate = function () {
         return timeRate;
     }
 
@@ -515,6 +546,14 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
     }
 
     /**
+     * Sets the processing status.
+     * @param {Boolean} isSpectrogramProcessed True if the the spectrogram is processed.
+     */
+    publicAPIs.setProcessedSynthesis = function (isSpectrogramProcessed) {
+        isProcessed = isSpectrogramProcessed;
+    }
+
+    /**
      * Sets the two windows transform status.
      * @param {Boolean} inputUseTwoWindows True if two windows are used, false otherwise.
      */
@@ -534,7 +573,6 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
         signal = inputSignal;
         windowFunction1 = inputWindowFunction;
         windowFunction2 = toDefaultIfUndefined(options.window2, windowFunction1);
-        windowFunction3 = toDefaultIfUndefined(options.window3, windowFunction1);
 
         // Updates the duration and range of the signal
         signalDuration = signal.getDuration();
@@ -555,7 +593,14 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
         sampledWindow1 = windowFunction1.getSampled(numPoints);
         sampledWindow2 = windowFunction2.getSampled(numPoints);
 
+        // Use two windows
         useTwoWindows = toDefaultIfUndefined(options.useTwoWindows, false);
+
+        // Denoise factor
+        denoiseFactor = toDefaultIfUndefined(options.denoiseFactor, 0.1);
+
+        // Processing status
+        isProcessed = toDefaultIfUndefined(options.isProcessed, false);
 
         // Updates the coefficient
         publicAPIs.updateCoefficients();
@@ -572,8 +617,10 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
         for (let i = 0; i < numPoints; i++) {
             sampledCoefficient[i] = [];
             for (let j = 0; j < numPoints; j += freqRate) {
+                // const phi = - 2 * Math.PI * (i / numPoints * signalDuration)
+                //     * (range.min - padding + (j / numPoints) * (rangeDiff + padding * 2));
                 const phi = - 2 * Math.PI * (i / numPoints * signalDuration)
-                    * (range.min - padding + (j / numPoints) * (rangeDiff + padding * 2));
+                    * (range.min - padding + j / numPoints * (range.max + padding));
                 sampledCoefficient[i][j / freqRate] = new ComplexNumber(Math.cos(phi), Math.sin(phi));
             }
         }
@@ -613,16 +660,19 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
             const g2 = sampledWindow2[numPoints + t - x];
 
             // Integral of coefficient * f * g * dt
-            vgf1.add(c.scale(f * g1 * dt));
+            vgf1.add(c.scale(f * g1));
             // Integral of coefficient * f * g * dt
-            vgf2.add(c.scale(f * g2 * dt));
+            vgf2.add(c.scale(f * g2));
         }
 
-        return { vgf1: vgf1, vgf2: vgf2 };
+        return {
+            vgf1: vgf1.divide(1 / dt),
+            vgf2: vgf2.divide(1 / dt)
+        };
     }
 
     publicAPIs.fourierAt = (omega) => {
-        let ff = new ComplexNumber(0, 0);
+        let ft = new ComplexNumber(0, 0);
 
         for (let t = 0; t < numPoints; t++) {
             // Coefficient e^(-2 * PI * t * omega)
@@ -630,10 +680,10 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
             // f(t)
             const f = sampledSignal[t];
 
-            ff.add(c.scale(f * dt));
+            ft.add(c.scale(f));
         }
 
-        return ff;
+        return ft.divide(1 / dt);
     }
 
     publicAPIs.getScaledSpectrogram = () => {
@@ -643,32 +693,32 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
 
         spectrum.forEach((a, i) => {
             scaledSpectrogram[i] = [];
-            a.map((b, j) => {
+            a.forEach((b, j) => {
                 scaledSpectrogram[i][j] = b.abs();
             });
-            return a;
         });
 
         var maxRow = scaledSpectrogram.map(row => {
             return Math.max.apply(Math, row);
         });
-        var maxValue = Math.max.apply(null, maxRow);
+        maxSpectrum = Math.max(...maxRow);
 
-        scaledSpectrogram.map(a => {
-            a.map(b => {
-                return b / maxValue;
-            });
-            return a;
-        });
+        scaledSpectrogram.forEach((a, i) => {
+            a.forEach((b, j) => {
+                const c = b / maxSpectrum;
+                scaledSpectrogram[i][j] = isProcessed ?
+                    (c < denoiseFactor ? 0 : c) : c;
+            })
+        })
 
         return scaledSpectrogram;
     }
 
-    publicAPIs.synthesizeSignal = (t) => {
-        synthesizedSignal = [];
+    publicAPIs.synthesizeSignal = () => {
+        let synthesizedSignal = [];
 
-        for (t = 0; t < numPoints; t++) {
-            synthesizedSignal[t] = publicAPIs.inverseGaborAt(t).abs();
+        for (let t = 0; t < numPoints; t++) {
+            synthesizedSignal[t] = publicAPIs.inverseGaborAt(t).real();
         }
 
         return synthesizedSignal;
@@ -677,20 +727,20 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
     publicAPIs.inverseGaborAt = (t) => {
         let f = new ComplexNumber(0, 0);
 
-        for (let x = 0; x < numPoints; x++) {
-            for (let omega = 0; omega < numPoints; omega += freqRate) {
-                const g2 = sampledWindow2[numPoints + x - t];
-                const c = sampledCoefficient[x][omega / freqRate];
+        for (let omega = 0; omega < numPoints; omega += freqRate) {
+            const c = sampledCoefficient[t][omega / freqRate].conj();
 
-                const spectrum = useTwoWindows ?
-                    sampledSpectrum2[Math.floor(x / timeRate)][omega / freqRate] :
-                    sampledSpectrum1[Math.floor(x / timeRate)][omega / freqRate];
+            let spectrum = useTwoWindows ?
+                sampledSpectrum2[Math.floor(t / timeRate)][omega / freqRate] :
+                sampledSpectrum1[Math.floor(t / timeRate)][omega / freqRate];
 
-                f.add(spectrum.multiply(c).scale(g2 * dt));
-            }
+            spectrum = isProcessed ? ((spectrum.abs() / maxSpectrum < denoiseFactor) ?
+                new ComplexNumber(0, 0) : spectrum) : spectrum;
+
+            f.add(spectrum.multiply(c));
         }
 
-        return f;
+        return f.divide(numPoints / freqRate);
     }
 
     // Creates the transform manager

@@ -115,7 +115,7 @@ let fourierPlot = function (idNumber, inputFourierTransform, options = []) {
     publicAPIs.updatePlot = (inputFourierTransform, options) => {
         // Sets the frequency sample rate
         freqRate = toDefaultIfUndefined(options.freqRate, 12);
-        
+
         // Sets the Gabor transform
         fourierTransform = inputFourierTransform;
 
@@ -185,15 +185,15 @@ let fourierPlot = function (idNumber, inputFourierTransform, options = []) {
 
         for (let j = 0; j < numPoints; j += freqRate) {
             // Gabor transform
-            const ff = fourierTransform.fourierAt(j / freqRate);
+            const ft = fourierTransform.fourierAt(j / freqRate);
             // Spectrogram
-            let spectrogram = ff.abs();
+            let spectrogram = ft.abs();
 
             // Grey value of the cell
             const alpha = - Math.pow(Math.exp(- spectrogram), 1 / power) + 1;
             // Position of the cell
-            const xPos = (fourierPosition * width) - fourierPosition * alpha * width * widthScale;
-            const yPos = height - Math.round(j * cellHeight)
+            const xPos = Math.round((fourierPosition * width) - fourierPosition * alpha * width * widthScale);
+            const yPos = height - Math.round(j * cellHeight);
 
             // Draws the cell
             ctx.beginPath();
