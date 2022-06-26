@@ -73,6 +73,14 @@ let windowPlot = function (idNumber) {
      */
     let sampledSignal;
 
+    let showAmplitudes;
+
+    let showSignal;
+
+    let showWindow1;
+
+    let showWindow2;
+
     /**
      * Window function position on the time axis.
      */
@@ -81,6 +89,23 @@ let windowPlot = function (idNumber) {
     publicAPIs.resetWindowPositions = () => {
         windowPositions = [0.5, 0.5];
         publicAPIs.drawPlot();
+    }
+
+    publicAPIs.setAmplitudesVisibility = (visibility) => {
+        showAmplitudes = visibility;
+    }
+
+
+    publicAPIs.setSignalVisibility = (visibility) => {
+        showSignal = visibility;
+    }
+
+    publicAPIs.setWindow1Visibility = (visibility) => {
+        showWindow1 = visibility;
+    }
+
+    publicAPIs.setWindow2Visibility = (visibility) => {
+        showWindow2 = visibility;
     }
 
     /**
@@ -125,6 +150,12 @@ let windowPlot = function (idNumber) {
 
         // Sets the scale according to the amplitude
         yScale = showSignal ? toDefaultIfUndefined(options.yScale, 0.4 / signal.getAmp()) : 0.8;
+
+        showSignal = options.showSignal;
+        showAmplitudes = options.showAmplitudes;
+
+        showWindow1 = options.showWindow1, true;
+        showWindow2 = options.showWindow2, false;
 
         // Draws the plot
         publicAPIs.drawPlot();
@@ -180,35 +211,51 @@ let windowPlot = function (idNumber) {
         // Draws the signal
         if (showSignal) {
             ctx.lineWidth = .75;
-            ctx.strokeStyle = "rgb(0, 0, 0, .25)"
-            ctx.beginPath();
-            ctx.moveTo(0, height * 0.5);
-            for (let i = 1; i < numPoints; i++) {
-                ctx.lineTo(
-                    i / numPoints * width,
-                    height - height * (0.5 + yScale * sampledSignal[i]));
-            }
-            ctx.stroke();
-            ctx.closePath();
+            ctx.strokeStyle = (showWindow1 || showWindow2) ?
+                "rgb(0, 0, 0, .25)" : "rgb(0, 0, 0, .75)"
 
-            // Draws the second window if present
-            if (useTwoWindows) {
-                ctx.strokeStyle = "#06688c"
-                ctx.lineWidth = 1;
-
+            if (showAmplitudes) {
+                for (let i = 1; i < numPoints; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i / numPoints * width, height * 0.5);
+                    ctx.lineTo(
+                        i / numPoints * width,
+                        height - height * (0.5 + yScale * sampledSignal[i]));
+                    ctx.stroke();
+                    ctx.closePath();
+                }
+            } else {
                 ctx.beginPath();
                 ctx.moveTo(0, height * 0.5);
                 for (let i = 1; i < numPoints; i++) {
-                    const w = sampledWindow2[numPoints + i - Math.round(windowPositions[1] * numPoints)];
                     ctx.lineTo(
                         i / numPoints * width,
-                        height * (0.5 - yScale * w * sampledSignal[i])
-                    );
+                        height - height * (0.5 + yScale * sampledSignal[i]));
                 }
                 ctx.stroke();
                 ctx.closePath();
             }
+        }
 
+        // Draws the second window if present
+        if (useTwoWindows && showWindow2) {
+            ctx.strokeStyle = "#06688c"
+            ctx.lineWidth = 1;
+
+            ctx.beginPath();
+            ctx.moveTo(0, height * 0.5);
+            for (let i = 1; i < numPoints; i++) {
+                const w = sampledWindow2[numPoints + i - Math.round(windowPositions[1] * numPoints)];
+                ctx.lineTo(
+                    i / numPoints * width,
+                    height * (0.5 - yScale * w * sampledSignal[i])
+                );
+            }
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        if (showWindow1) {
             ctx.strokeStyle = "#8c1500"
             ctx.lineWidth = 1;
 
@@ -226,7 +273,7 @@ let windowPlot = function (idNumber) {
         }
 
         // Draws the second window if present
-        if (useTwoWindows) {
+        if (useTwoWindows && showWindow2) {
             ctx.strokeStyle = "#0c95c7";
             ctx.lineWidth = 1.15;
 
@@ -251,28 +298,29 @@ let windowPlot = function (idNumber) {
         }
 
         // Draws the window
+        if (showWindow1) {
+            ctx.strokeStyle = "#B01A00";
+            ctx.lineWidth = 1.25;
 
-        ctx.strokeStyle = "#B01A00";
-        ctx.lineWidth = 1.25;
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(windowPositions[0] * width, 0);
+            ctx.lineTo(windowPositions[0] * width, height);
+            ctx.stroke();
 
-        ctx.beginPath();
-        ctx.setLineDash([5, 5]);
-        ctx.moveTo(windowPositions[0] * width, 0);
-        ctx.lineTo(windowPositions[0] * width, height);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.setLineDash([]);
-        ctx.moveTo(0, height * 0.5);
-        for (let i = 1; i < numPoints; i++) {
-            const w = sampledWindow[numPoints + i - Math.round(windowPositions[0] * numPoints)];
-            ctx.lineTo(
-                i / numPoints * width,
-                height * (0.5 - 0.4 * w)
-            );
+            ctx.beginPath();
+            ctx.setLineDash([]);
+            ctx.moveTo(0, height * 0.5);
+            for (let i = 1; i < numPoints; i++) {
+                const w = sampledWindow[numPoints + i - Math.round(windowPositions[0] * numPoints)];
+                ctx.lineTo(
+                    i / numPoints * width,
+                    height * (0.5 - 0.4 * w)
+                );
+            }
+            ctx.stroke();
+            ctx.closePath();
         }
-        ctx.stroke();
-        ctx.closePath();
     }
 
     /**

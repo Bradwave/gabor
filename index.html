@@ -78,6 +78,12 @@
                     <div>
                         signal<span style="visibility: hidden;">_</span>
                         <span class="material-symbols-outlined">chevron_right</span>
+                        <span id="signal-visibility" class="material-symbols-outlined button">
+                            visibility
+                        </span>
+                        <span id="amplitude-view" class="material-symbols-outlined button" style="opacity: 0.5;">
+                            bar_chart
+                        </span>
                         N:
                         <input id="signal-num-points" class="input-box" type="text" maxlength="5" value="1200">
                         t-scale:
@@ -90,12 +96,18 @@
                     <div style="margin-top: 4px;">
                         window<span style="visibility: hidden;">_</span>
                         <span class="material-symbols-outlined">chevron_right</span>
+                        <span id="window-1-visibility" class="material-symbols-outlined button">
+                            visibility
+                        </span>
                         <span name="window-button" class="material-symbols-outlined button first-window" id="window-1"
                             style="transform: translate(-3px, -1px);">
                             sync_alt
                         </span>
                         sigma-1:
                         <input id="sigma-1" class="input-box window" type="text" maxlength="6" value="0.5">
+                        <span id="window-2-visibility" class="material-symbols-outlined button" style="opacity: 0.2;">
+                            visibility_off
+                        </span>
                         <span name="window-button" class="material-symbols-outlined button second-window" id="window-2"
                             style="opacity: 0.5;">
                             sync_alt

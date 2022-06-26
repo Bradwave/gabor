@@ -48,6 +48,12 @@ let synthesisPlot = function (id) {
      */
     let synthesizedSignal;
 
+    let showAmplitudes;
+
+    publicAPIs.setAmplitudesVisibility = (visibility) => {
+        showAmplitudes = visibility;
+    }
+
     /**
      * Updates the plot.
      * @param {*} inputSignal Signal function f(x), 
@@ -99,17 +105,28 @@ let synthesisPlot = function (id) {
 
         publicAPIs.clearPlot();
 
-        ctx.strokeStyle = "#555555";
+        ctx.strokeStyle = "rbg(0, 0, 0, .75)";
         ctx.lineWidth = .75;
 
-        ctx.beginPath();
-        ctx.moveTo(0, height * 0.5);
-        for (let i = 1; i < numPoints; i++) {
-            ctx.lineTo(
-                i / numPoints * width,
-                height - height * (0.5 + yScale * synthesizedSignal[i]));
+        if (showAmplitudes) {
+            for (let i = 1; i < numPoints; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i / numPoints * width, height * 0.5);
+                ctx.lineTo(
+                    i / numPoints * width,
+                    height - height * (0.5 + yScale * synthesizedSignal[i]));
+                ctx.stroke();
+            }
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(0, height * 0.5);
+            for (let i = 1; i < numPoints; i++) {
+                ctx.lineTo(
+                    i / numPoints * width,
+                    height - height * (0.5 + yScale * synthesizedSignal[i]));
+            }
+            ctx.stroke();
         }
-        ctx.stroke();
     }
 
     /**

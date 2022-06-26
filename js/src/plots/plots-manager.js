@@ -60,9 +60,29 @@ const plotsManager = new function () {
     const editButton = document.getElementById("edit");
 
     /**
+    * Cut the selected area in the spectrogram.
+    */
+    const cutButton = document.getElementById("cut");
+
+    /**
      * Cut the selected area in the spectrogram.
      */
-    const cutButton = document.getElementById("cut");
+    const amplitudesButton = document.getElementById("amplitude-view");
+
+    /**
+     * Cut the selected area in the spectrogram.
+     */
+    const signalVisibilityButton = document.getElementById("signal-visibility");
+
+    /**
+    * Cut the selected area in the spectrogram.
+    */
+    const window1VisibilityButton = document.getElementById("window-1-visibility");
+
+    /**
+     * Cut the selected area in the spectrogram.
+     */
+    const window2VisibilityButton = document.getElementById("window-2-visibility");
 
     /**
     * Selection element div.
@@ -174,6 +194,14 @@ const plotsManager = new function () {
      */
     let isEditable = { previous: false, current: false };
 
+    let showAmplitudes = false;
+
+    let showSignal = true;
+
+    let showWindow1 = true;
+
+    let showWindow2 = false;
+
     /**
      * Music sheet for the signal.
      */
@@ -267,7 +295,11 @@ const plotsManager = new function () {
                 signal: signal,
                 N: signalNumPoints,
                 useTwoWindows: useTwoWindows,
-                window2: g2
+                window2: g2,
+                showSignal: showSignal,
+                showAmplitudes: showAmplitudes,
+                showWindow1: showWindow1,
+                showWindow2: showWindow2
             }
         );
 
@@ -455,10 +487,12 @@ const plotsManager = new function () {
         const sigma2Input = plotInputs.get('sigma-2').value;
         if (sigma2Input.localeCompare("no") == 0) {
             useTwoWindows = false;
+            showWindow2 = false;
             // Uncheck the window button (indicating it is movable)
             setWindowButtonState(false);
         } else {
             useTwoWindows = true;
+            showWindow2 = true;
             sigma2 = getInputNumber(plotInputs, 'sigma-2');
             // Check the window button if previously active;
             setWindowButtonState(true);
@@ -512,6 +546,8 @@ const plotsManager = new function () {
         const movable = movableWindows[1];
         windowMoveButtons[1].style.color = active ? "#0C95C7" : "var(--primary)";
         windowMoveButtons[1].style.opacity = active ? (movable ? 1 : 0.5) : (movable ? 0.5 : 0.2);
+        window2VisibilityButton.style.opacity = active ? 1 : 0.2;
+        window2VisibilityButton.textContent = active ? "visibility" : "visibility_off"
     }
 
     /**
@@ -648,6 +684,43 @@ const plotsManager = new function () {
                 plots.get('synthesis').update(analysisController.synthesizeSignal());
                 plots.get('synthesis').drawPlot();
             }, 50);
+        }
+    }
+
+    const toggleVisibilityButton = (button, visible) => {
+        button.textContent = visible ? "visibility" : "visibility_off"
+        button.style.opacity = visible ? 1 : 0.5;
+    }
+
+    amplitudesButton.onclick = () => {
+        showAmplitudes = showAmplitudes ? false : true;
+        amplitudesButton.style.opacity = showAmplitudes ? 1 : 0.5;
+        plots.get('window').setAmplitudesVisibility(showAmplitudes);
+        plots.get('window').drawPlot();
+        plots.get('synthesis').setAmplitudesVisibility(showAmplitudes);
+        plots.get('synthesis').drawPlot();
+    }
+
+    signalVisibilityButton.onclick = () => {
+        showSignal = showSignal ? false : true;
+        toggleVisibilityButton(signalVisibilityButton, showSignal);
+        plots.get('window').setSignalVisibility(showSignal);
+        plots.get('window').drawPlot();
+    }
+
+    window1VisibilityButton.onclick = () => {
+        showWindow1 = showWindow1 ? false : true;
+        toggleVisibilityButton(window1VisibilityButton, showWindow1);
+        plots.get('window').setWindow1Visibility(showWindow1);
+        plots.get('window').drawPlot();
+    }
+
+    window2VisibilityButton.onclick = () => {
+        if (useTwoWindows) {
+            showWindow2 = showWindow2 ? false : true;
+            toggleVisibilityButton(window2VisibilityButton, showWindow2);
+            plots.get('window').setWindow2Visibility(showWindow2);
+            plots.get('window').drawPlot();
         }
     }
 

@@ -222,6 +222,11 @@ let musicSignal = function (inputTracks, options = []) {
     let timeScale;
 
     /**
+     * Power of the exponential coefficient.
+     */
+    let expPower;
+
+    /**
      * Noise factor.
      */
     let noiseFactor;
@@ -344,10 +349,10 @@ let musicSignal = function (inputTracks, options = []) {
 
                     freq = noteToFreq(track[i].note, toDefaultIfUndefined(track[i].oct, 0));
                     let expCoefficient = Math.exp(- Math.PI
-                        * Math.pow(2 * ((time - dt) / track[i].d - 1 / 2), 12));
+                        * Math.pow(2 * ((time - dt) / track[i].d - 1 / 2), 2 * expPower));
                     fx += expCoefficient * track[i].vol // Amplitude
-                        * (Math.sin(2 * Math.PI * freq * time)
-                            + noiseFactor * Math.random());
+                        * (Math.sin(2 * Math.PI * freq * time)) // Frequency
+                        + (- noiseFactor / 2 + noiseFactor * Math.random()) * track[i].vol; // Noise
                 }
             });
             return fx;
@@ -378,6 +383,8 @@ let musicSignal = function (inputTracks, options = []) {
 
         tracksLength = getTracksLength();
         duration = publicAPIs.getDuration();
+
+        expPower = toDefaultIfUndefined(options.expPower, 6);
 
         noiseFactor = toDefaultIfUndefined(options.noiseFactor, 0.1);
 
