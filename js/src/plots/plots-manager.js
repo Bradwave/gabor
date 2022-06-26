@@ -124,6 +124,8 @@ const plotsManager = new function () {
      */
     let volume = 1;
 
+    let expPower = 6;
+
     /**
      * Noise factor
      */
@@ -247,6 +249,7 @@ const plotsManager = new function () {
                 musicManager.fromStringToMusic(musicSheet),
                 {
                     N: signalNumPoints,
+                    expPower: expPower,
                     noiseFactor: noiseFactor
                 });
         } catch (error) {
@@ -428,8 +431,8 @@ const plotsManager = new function () {
                 plotInputs.get('time-scale').value = 2;
                 plotInputs.get('volume').value = 2;
                 plotInputs.get('noise').value = 0;
-                plotInputs.get('sigma-1').value = 0.005;
-                plotInputs.get('sigma-2').value = 0.05;
+                plotInputs.get('sigma-1').value = 2;
+                plotInputs.get('sigma-2').value = 0.5;
                 plotInputs.get('zoom').value = 0.15;
             }
 
@@ -448,7 +451,7 @@ const plotsManager = new function () {
      * Ids of input boxes for the plots.
      */
     let inputIds = [
-        'signal-num-points', 'time-scale', 'volume', 'noise',
+        'signal-num-points', 'time-scale', 'volume', 'exp-power', 'noise',
         'sigma-1', 'sigma-2',
         't-rate', 'f-rate', 'zoom',
         'fourier-f-rate', 'fourier-power', 'fourier-scale',
@@ -480,6 +483,7 @@ const plotsManager = new function () {
         signalNumPoints = constrain(getInputNumber(plotInputs, 'signal-num-points'), 1, Infinity);
         timeScale = constrain(getInputNumber(plotInputs, 'time-scale'), 0, Infinity);
         volume = constrain(getInputNumber(plotInputs, 'volume'), 0, Infinity);
+        expPower = constrain(getInputNumber(plotInputs, 'exp-power'), 0, Infinity);
         noiseFactor = getInputNumber(plotInputs, 'noise');
 
         // Window
