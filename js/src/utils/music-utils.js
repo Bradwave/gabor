@@ -110,24 +110,39 @@ const musicManager = new function () {
             // Divides each note
             let notes = track.split(" ");
             notes.forEach(note => {
+                // Checks if duration is present
+                const withDuration = note.includes("/");
+                // Checks if volume is present
+                const withVolume = note.includes(":");
+
                 // Divides the note value from its properties
-                const noteStructure = note.split("/");
+                const noteStructure = withDuration ?
+                    note.split("/") : (withVolume ? note.split(":") : [note]);
 
                 // Divides the note name from the octave
                 let noteValue = noteStructure[0];
 
-                const isSilence = noteValue.localeCompare("_");
-                const withOctave = isNaN(noteValue.slice(-1));
-                const noteOctave = isSilence == 0 ? 0 :
-                    (withOctave ? 0 : parseInt(noteValue.slice(-1)));
-                const noteName = isSilence == 0 ? "a" :
-                    (withOctave ? noteValue : noteValue.slice(0, -1));
+                console.log(noteValue)
+
+                const isSilence = noteValue.includes("_");
+                const withoutOctave = isNaN(noteValue.slice(-1));
+                const noteOctave = isSilence ? 0 :
+                    (withoutOctave ? 0 : parseInt(noteValue.slice(-1)));
+                const noteName = isSilence ? "a" :
+                    (withoutOctave ? noteValue : noteValue.slice(0, -1));
+
+                console.log(noteName, noteOctave)
 
                 // Divides the note duration from the volume
-                let noteProperties = noteStructure[1].split(":");
-                let noteDuration = parseFloat(noteProperties[0]);
-                let noteVolume = isSilence == 0 ? 0 :
-                    parseFloat(toDefaultIfUndefined(noteProperties[1], 1));
+                let noteProperties = withDuration ?
+                    noteStructure[1].split(":") : noteStructure[1];
+
+                let noteDuration = withDuration ?
+                    parseFloat(noteProperties[0]) : 1;
+                let noteVolume = isSilence ? 0 :
+                    parseFloat(toDefaultIfUndefined(
+                        withDuration ? noteProperties[1] : noteProperties, 1
+                    ));
 
                 // Adds the note the track
                 musicSheet[i].push({

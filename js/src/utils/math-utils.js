@@ -348,11 +348,16 @@ let musicSignal = function (inputTracks, options = []) {
                     };
 
                     freq = noteToFreq(track[i].note, toDefaultIfUndefined(track[i].oct, 0));
-                    let expCoefficient = Math.exp(- Math.PI
-                        * Math.pow(2 * ((time - dt) / track[i].d - 1 / 2), 2 * expPower));
+
+                    let expCoefficient = (time - dt < track[i].d / 2) ?
+                        Math.exp(-Math.PI * 2
+                            * Math.pow((time - dt) / track[i].d - 1 / 2, 2 * expPower)) :
+                        Math.exp(- Math.PI
+                            * Math.pow(2 * ((time - dt) / track[i].d - 1 / 2), 2 * expPower));
+
                     fx += expCoefficient * track[i].vol // Amplitude
                         * (Math.sin(2 * Math.PI * freq * time)) // Frequency
-                        + (- noiseFactor / 2 + noiseFactor * Math.random()) * track[i].vol; // Noise
+                        + (- noiseFactor + 2 * noiseFactor * Math.random()); // Noise
                 }
             });
             return fx;
@@ -587,7 +592,7 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
         rangeDiff = range.max - range.min;
 
         // Updates the zoom level
-        padding = toDefaultIfUndefined(options.padding, .1) * rangeDiff;
+        padding = toDefaultIfUndefined(options.padding, .05) * rangeDiff;
 
         // Updates the number of sampled points
         numPoints = toDefaultIfUndefined(options.N, 1200);

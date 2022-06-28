@@ -120,6 +120,11 @@ const plotsManager = new function () {
     let timeScale = 20;
 
     /**
+     * Base frequency.
+     */
+    let baseFreq = 1;
+
+    /**
      * Music volume multiplier.
      */
     let volume = 1;
@@ -149,7 +154,7 @@ const plotsManager = new function () {
     /**
      * Padding for the Gabor transform plot.
      */
-    let padding = .2;
+    let padding = .05;
 
     /**
      * True if the Fourier plot is visible, false otherwise.
@@ -249,6 +254,7 @@ const plotsManager = new function () {
                 musicManager.fromStringToMusic(musicSheet),
                 {
                     N: signalNumPoints,
+                    baseFreq: baseFreq,
                     expPower: expPower,
                     noiseFactor: noiseFactor
                 });
@@ -451,10 +457,10 @@ const plotsManager = new function () {
      * Ids of input boxes for the plots.
      */
     let inputIds = [
-        'signal-num-points', 'time-scale', 'volume', 'exp-power', 'noise',
+        'signal-num-points', 'time-scale', 'base-freq', 'volume', 'exp-power', 'noise',
         'sigma-1', 'sigma-2',
         't-rate', 'f-rate', 'zoom',
-        'fourier-f-rate', 'fourier-power', 'fourier-scale',
+        'fourier-power', 'fourier-scale',
         'denoise'
     ];
 
@@ -482,6 +488,7 @@ const plotsManager = new function () {
         // Signal
         signalNumPoints = constrain(getInputNumber(plotInputs, 'signal-num-points'), 1, Infinity);
         timeScale = constrain(getInputNumber(plotInputs, 'time-scale'), 0, Infinity);
+        baseFreq = constrain(getInputNumber(plotInputs, 'base-freq'), 0, Infinity);
         volume = constrain(getInputNumber(plotInputs, 'volume'), 0, Infinity);
         expPower = constrain(getInputNumber(plotInputs, 'exp-power'), 0, Infinity);
         noiseFactor = getInputNumber(plotInputs, 'noise');
@@ -510,7 +517,7 @@ const plotsManager = new function () {
         // Fourier
         fourierScale = constrain(getInputNumber(plotInputs, 'fourier-scale'), 0, 1);
         fourierPower = getInputNumber(plotInputs, 'fourier-power');
-        fourierFreqRate = constrain(getInputNumber(plotInputs, 'fourier-f-rate', 0, Infinity));
+        fourierFreqRate = constrain(getInputNumber(plotInputs, 'f-rate', 0, Infinity));
 
         // Processing and synthesis
         denoiseFactor = constrain(getInputNumber(plotInputs, 'denoise'), 0, 1);
