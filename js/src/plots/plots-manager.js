@@ -17,7 +17,15 @@ const plotsManager = new function () {
 
     let resizeTimeout;
 
+    /**
+     * Refresh button.
+     */
     const refreshButton = document.getElementById("refresh-all");
+
+    /**
+     * Auto-refresh button.
+     */
+    const autoRefreshButton = document.getElementById("auto-refresh");
 
     /**
      * Spinning loaders.
@@ -83,6 +91,11 @@ const plotsManager = new function () {
      * Cut the selected area in the spectrogram.
      */
     const window2VisibilityButton = document.getElementById("window-2-visibility");
+
+    /**
+     * Cut the selected area in the spectrogram.
+     */
+    const fourierVisibilityButton = document.getElementById("fourier-visibility");
 
     /**
     * Selection element div.
@@ -201,13 +214,30 @@ const plotsManager = new function () {
      */
     let isEditable = { previous: false, current: false };
 
+    /**
+     * True if amplitudes are shown, false otherwise.
+     */
     let showAmplitudes = false;
 
+    /**
+     * True if the signal is shown, false otherwise.
+     */
     let showSignal = true;
 
+    /**
+     * Ture if the first window is shown, false otherwise.
+     */
     let showWindow1 = true;
 
+    /**
+     * Ture if the second window is shown, false otherwise.
+     */
     let showWindow2 = false;
+
+    /**
+     * Ture if auto-refresh is active, false otherwise.
+     */
+    let autoRefresh = false;
 
     /**
      * Music sheet for the signal.
@@ -342,7 +372,7 @@ const plotsManager = new function () {
     // On window resize
     window.onresize = () => {
         plots.forEach(plot => {
-            // Resize the canvas
+            // Clear the canvas
             plot.clearPlot();
         });
 
@@ -432,14 +462,22 @@ const plotsManager = new function () {
         if (typeof musicSheet === 'undefined') {
             musicSheet = textareaValue;
         } else {
-            // Change parameters for Bach's toccata
             if (textarea.value == "bach toccata") {
+                // Change parameters for Bach's toccata
                 plotInputs.get('time-scale').value = 2;
                 plotInputs.get('volume').value = 2;
                 plotInputs.get('noise').value = 0;
                 plotInputs.get('sigma-1').value = 2;
                 plotInputs.get('sigma-2').value = 0.5;
                 plotInputs.get('zoom').value = 0.15;
+            } else if (textarea.value == "ode to joy") {
+                // Change parameters for Bach's toccata
+                plotInputs.get('time-scale').value = 12;
+                plotInputs.get('volume').value = 1;
+                plotInputs.get('noise').value = 0.05;
+                plotInputs.get('sigma-1').value = 2;
+                plotInputs.get('sigma-2').value = "no";
+                plotInputs.get('zoom').value = 0.5;
             }
 
             // Updates the textarea value
@@ -476,10 +514,22 @@ const plotsManager = new function () {
 
     // Sets listeners for input boxes
     plotInputs.forEach((input) => {
+        input.onkeyup = (e) => {
+            if (e.code === "Enter" && !autoRefresh) {
+                changePlot();
+            }
+        }
+
         input.onchange = () => {
-            changePlot();
+            if (autoRefresh) changePlot();
         }
     });
+
+    document.onkeyup = (e) => {
+        if (e.code === "Enter") {
+            changePlot();
+        }
+    }
 
     /**
      * Updates the input boxes and the respective variables.
@@ -575,31 +625,19 @@ const plotsManager = new function () {
         plots.get("window").resetWindowPositions();
     }
 
-    /** 
-     * Input box for the Fourier visibility
-     */
-    const fourierVisibilityInput = document.getElementById("fourier-visible");
+    // Sets listener for the Fourier visibility button
+    fourierVisibilityButton.onclick = () => {
+        if (!isEditable.current) {
+            toggleFourier(!fourierVisible.current, fourierMovable);
 
-    // Sets listener for the Fourier visibility input box
-    fourierVisibilityInput.onchange = () => {
-        const fourierVisibility = fourierVisibilityInput.value;
-        switch (fourierVisibility) {
-            case "yes":
-                toggleFourier(true, fourierMovable);
-                break;
-            case "no":
-                toggleFourier(false, fourierMovable);
-                break;
-            default:
-                toggleFourier(false, fourierMovable);
-                fourierVisibilityInput.value = "no";
-        }
+            toggleVisibilityButton(fourierVisibilityButton, fourierVisible.current);
 
-        if (fourierVisible.current) {
-            isEditable.previous = isEditable.current;
-            toggleEdit(false);
-        } else {
-            toggleEdit(isEditable.previous);
+            if (fourierVisible.current) {
+                isEditable.previous = isEditable.current;
+                toggleEdit(false);
+            } else {
+                toggleEdit(isEditable.previous);
+            }
         }
     }
 
@@ -679,9 +717,11 @@ const plotsManager = new function () {
         if (isEditable.current) {
             fourierVisible.previous = fourierVisible.current;
             toggleFourier(false, fourierMovable);
+            toggleVisibilityButton(fourierVisibilityButton, false);
             document.getElementById("fourier-visible").value = "no";
         } else {
             toggleFourier(fourierVisible.previous, fourierMovable);
+            toggleVisibilityButton(fourierVisibilityButton, fourierVisible.previous);
             document.getElementById("fourier-visible").value = fourierVisible.previous ?
                 "yes" : "no";
         }
@@ -704,7 +744,7 @@ const plotsManager = new function () {
     }
 
     amplitudesButton.onclick = () => {
-        showAmplitudes = showAmplitudes ? false : true;
+        showAmplitudes = !showAmplitudes;
         amplitudesButton.style.opacity = showAmplitudes ? 1 : 0.5;
         plots.get('window').setAmplitudesVisibility(showAmplitudes);
         plots.get('window').drawPlot();
@@ -713,14 +753,14 @@ const plotsManager = new function () {
     }
 
     signalVisibilityButton.onclick = () => {
-        showSignal = showSignal ? false : true;
+        showSignal = !showSignal;
         toggleVisibilityButton(signalVisibilityButton, showSignal);
         plots.get('window').setSignalVisibility(showSignal);
         plots.get('window').drawPlot();
     }
 
     window1VisibilityButton.onclick = () => {
-        showWindow1 = showWindow1 ? false : true;
+        showWindow1 = !showWindow1;
         toggleVisibilityButton(window1VisibilityButton, showWindow1);
         plots.get('window').setWindow1Visibility(showWindow1);
         plots.get('window').drawPlot();
@@ -728,7 +768,7 @@ const plotsManager = new function () {
 
     window2VisibilityButton.onclick = () => {
         if (useTwoWindows) {
-            showWindow2 = showWindow2 ? false : true;
+            showWindow2 = !showWindow2;
             toggleVisibilityButton(window2VisibilityButton, showWindow2);
             plots.get('window').setWindow2Visibility(showWindow2);
             plots.get('window').drawPlot();
@@ -737,6 +777,12 @@ const plotsManager = new function () {
 
     refreshButton.onclick = () => {
         changePlot();
+    }
+
+    autoRefreshButton.onclick = () => {
+        autoRefresh = !autoRefresh;
+        autoRefreshButton.style.opacity = autoRefresh ? 1 : 0.2;
+        autoRefreshButton.style.color = autoRefresh ? "var(--accent)" : "var(--primary)";
     }
 
     /**

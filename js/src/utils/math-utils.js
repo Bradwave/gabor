@@ -646,7 +646,7 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
                 let sampledGabor = publicAPIs.gaborAt(i, j / freqRate);
                 sampledSpectrum1[i / timeRate][j / freqRate] = sampledGabor.vgf1;
                 sampledSpectrum2[i / timeRate][j / freqRate] =
-                    sampledGabor.vgf2.multiply(sampledGabor.vgf1);
+                    sampledGabor.vgf1.multiply(sampledGabor.vgf2.conj());
             }
         }
     }

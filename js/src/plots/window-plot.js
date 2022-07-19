@@ -182,10 +182,40 @@ let windowPlot = function (idNumber) {
         height = plot.getHeight();
     }
 
+    // Moves the position of the window
+
+    plot.getCanvas().onclick = (e) => {
+        moveWindow(e);
+    }
+
     /**
-     * Moves the position of the window function after mouse release.
+     * True if the windows are being move, false otherwise.
      */
-    plot.getCanvas().onmouseup = (e) => {
+    let movingWindow = false;
+
+    plot.getCanvas().onmousedown = (e) => {
+        movingWindow = true;
+    }
+
+    plot.getCanvas().onmousemove = (e) => {
+        if (movingWindow) {
+            moveWindow(e);
+        }
+    }
+
+    plot.getCanvas().onmouseup = () => {
+        movingWindow = false;
+    }
+
+    plot.getCanvas().onmouseout = () => {
+        movingWindow = false;
+    }
+
+    /**
+     * Move the position of the windows.
+     * @param {*} e Event.
+     */
+    const moveWindow = (e) => {
         const rect = e.target.getBoundingClientRect();
         // x position within the element
         const x = e.clientX - rect.left;
