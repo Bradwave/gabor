@@ -475,8 +475,8 @@ const plotsManager = new function () {
                 plotInputs.get('time-scale').value = 12;
                 plotInputs.get('volume').value = 1;
                 plotInputs.get('noise').value = 0.05;
-                plotInputs.get('sigma-1').value = 2;
-                plotInputs.get('sigma-2').value = "no";
+                plotInputs.get('sigma-1').value = 0.5;
+                plotInputs.get('sigma-2').value = 2;
                 plotInputs.get('zoom').value = 0.5;
             }
 
@@ -515,7 +515,7 @@ const plotsManager = new function () {
     // Sets listeners for input boxes
     plotInputs.forEach((input) => {
         input.onkeyup = (e) => {
-            if (e.code === "Enter" && !autoRefresh) {
+            if (e.code === "Enter" && !autoRefresh && !e.ctrlKey) {
                 changePlot();
             }
         }
@@ -526,7 +526,7 @@ const plotsManager = new function () {
     });
 
     document.onkeyup = (e) => {
-        if (e.code === "Enter") {
+        if (e.ctrlKey && e.code === "Enter") {
             changePlot();
         }
     }

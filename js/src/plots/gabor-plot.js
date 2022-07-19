@@ -114,6 +114,8 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
         selectionArea = options.selectionArea;
 
         scaledSpectrogram = gaborTransform.getScaledSpectrogram();
+
+        console.log("!")
     }
 
     // Creates the plot
@@ -243,16 +245,6 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
 
         for (let i = 0; i < numPoints; i += timeRate) {
             for (let j = 0; j < numPoints; j += freqRate) {
-                // // Gabor transform
-                // const vgf = gaborTransform.gaborAt(i, j / freqRate);
-                // // Spectrogram
-                // let spectrogram = vgf.abs();
-
-                // // Adds second Gabor transform if present
-                // if (useTwoWindows) {
-                //     spectrogram *= gaborTransform2.gaborAt(i, j / freqRate).abs();
-                // }
-
                 let spectrogram = scaledSpectrogram[i / timeRate][j / freqRate];
 
                 // Position of the cell
@@ -274,7 +266,6 @@ let gaborPlot = function (idNumber, inputGaborTransform, options = []) {
                     height - Math.round((j + freqRate) * cellHeight) - yPos
                 );
                 ctx.fill();
-                ctx.closePath();
             }
         }
     }

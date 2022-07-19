@@ -122,16 +122,12 @@ const musicManager = new function () {
                 // Divides the note name from the octave
                 let noteValue = noteStructure[0];
 
-                console.log(noteValue)
-
                 const isSilence = noteValue.includes("_");
                 const withoutOctave = isNaN(noteValue.slice(-1));
                 const noteOctave = isSilence ? 0 :
                     (withoutOctave ? 0 : parseInt(noteValue.slice(-1)));
                 const noteName = isSilence ? "a" :
                     (withoutOctave ? noteValue : noteValue.slice(0, -1));
-
-                console.log(noteName, noteOctave)
 
                 // Divides the note duration from the volume
                 let noteProperties = withDuration ?

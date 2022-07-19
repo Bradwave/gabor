@@ -645,7 +645,7 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
             for (let j = 0; j < numPoints; j += freqRate) {
                 let sampledGabor = publicAPIs.gaborAt(i, j / freqRate);
                 sampledSpectrum1[i / timeRate][j / freqRate] = sampledGabor.vgf1;
-                sampledSpectrum2[i / timeRate][j / freqRate] =
+                if (useTwoWindows) sampledSpectrum2[i / timeRate][j / freqRate] =
                     sampledGabor.vgf1.multiply(sampledGabor.vgf2.conj());
             }
         }
@@ -674,12 +674,12 @@ let transformManager = function (inputSignal, inputWindowFunction, options = [])
             // Integral of coefficient * f * g * dt
             vgf1.add(c.scale(f * g1));
             // Integral of coefficient * f * g * dt
-            vgf2.add(c.scale(f * g2));
+            if (useTwoWindows) vgf2.add(c.scale(f * g2));
         }
 
         return {
             vgf1: vgf1.divide(1 / dt),
-            vgf2: vgf2.divide(1 / dt)
+            vgf2: useTwoWindows ? vgf2.divide(1 / dt) : [vgf2]
         };
     }
 
